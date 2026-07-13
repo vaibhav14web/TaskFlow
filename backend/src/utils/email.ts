@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import config from './config';
+import logger from './logger';
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
@@ -25,20 +26,35 @@ export const sendEmail = async (to: string, subject: string, html: string, text?
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+      requireTLS: true,
+      tls: {
+        servername: SMTP_HOST,
+        rejectUnauthorized: false,
+      },
+    });
 
-  await transporter.sendMail({
-    from: `"TaskFlow" <${EMAIL_FROM}>`,
-    to,
-    subject,
-    text: text || subject,
-    html,
-  });
+    await transporter.sendMail({
+      from: `"TaskFlow" <${EMAIL_FROM}>`,
+      to,
+      subject,
+      text: text || subject,
+      html,
+    });
+  } catch (err) {
+    logger.error({ err, to, subject }, 'Email delivery failed; continuing without blocking auth flow');
+    console.log(`\n==================================================`);
+    console.log(`[EMAIL LOG (Fallback - SMTP Send Failed)]`);
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Body (Plain text):\n${text || html.replace(/<[^>]*>/g, '')}`);
+    console.log(`==================================================\n`);
+  }
 };
 
 /** Send email verification link to a newly registered user */
