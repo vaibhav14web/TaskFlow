@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { workspaceApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Zap, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import Sidebar from '../components/ui/Sidebar';
 import NotificationBell from '../components/dashboard/NotificationBell';

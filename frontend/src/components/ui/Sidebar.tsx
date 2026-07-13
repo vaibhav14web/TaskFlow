@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, BarChart3, Settings, LogOut,
-  ChevronLeft, ChevronRight, Bell, Zap
+  ChevronLeft, ChevronRight, Bell
 } from 'lucide-react';
 
 interface SidebarProps {

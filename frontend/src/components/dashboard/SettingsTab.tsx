@@ -88,6 +88,7 @@ export default function SettingsTab({ currentWs }: SettingsTabProps) {
     if (activeSubTab === 'invites') {
       fetchInvites();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSubTab, currentWs?.id]);
 
   const copyToClipboard = (text: string) => {
