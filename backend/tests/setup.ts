@@ -1,4 +1,9 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
 // Load test environment variables before any test modules import
+dotenv.config({ path: path.join(__dirname, '../.env.test') });
+
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-chars-long!!';
