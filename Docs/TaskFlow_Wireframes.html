@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TaskFlow — Low-Fidelity Wireframes</title>
+<style>
+  :root {
+    --line: #9aa0a6;
+    --fill: #eef0f2;
+    --fill-dark: #dfe3e6;
+    --text: #3c4043;
+    --accent: #5f6368;
+    --bg: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 32px;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { color: var(--accent); font-size: 13px; margin-bottom: 32px; }
+  .screen {
+    border: 2px dashed var(--line);
+    border-radius: 4px;
+    margin-bottom: 48px;
+    background: white;
+    max-width: 900px;
+  }
+  .screen-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--accent);
+    padding: 6px 12px;
+    border-bottom: 2px dashed var(--line);
+    background: var(--fill);
+  }
+  .screen-body { padding: 16px; }
+  .box {
+    border: 1px solid var(--line);
+    background: var(--fill);
+    border-radius: 3px;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .box.dark { background: var(--fill-dark); }
+  .row { display: flex; gap: 12px; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .flex1 { flex: 1; }
+  .flex2 { flex: 2; }
+  .flex3 { flex: 3; }
+  .btn {
+    display: inline-block;
+    border: 1px solid var(--accent);
+    padding: 6px 14px;
+    font-size: 11px;
+    border-radius: 3px;
+    background: white;
+    text-align: center;
+  }
+  .placeholder-x {
+    background-image: linear-gradient(45deg, transparent 48%, var(--line) 49%, var(--line) 51%, transparent 52%),
+                       linear-gradient(-45deg, transparent 48%, var(--line) 49%, var(--line) 51%, transparent 52%);
+  }
+  .avatar {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--fill-dark); border: 1px solid var(--line);
+    display: inline-block;
+  }
+  .kanban-col { flex: 1; min-width: 160px; }
+  .kanban-card { margin-bottom: 8px; }
+  .tag { font-size: 9px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 2px; display: inline-block; margin-right: 4px; }
+  .chart-box {
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 8px;
+  }
+  .bar { background: var(--fill-dark); border: 1px solid var(--line); flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>TaskFlow — Low-Fidelity Wireframes</h1>
+<div class="subtitle">Intentionally unstyled (grayscale, boxes-and-labels) to focus review on layout and information hierarchy, not visual design.</div>
+
+<!-- SCREEN 1: LOGIN -->
+<div class="screen">
+  <div class="screen-label">Screen 1 — Login / Signup</div>
+  <div class="screen-body">
+    <div class="col" style="max-width:320px; margin: 0 auto;">
+      <div class="box dark" style="text-align:center; padding:16px; font-weight:bold;">TASKFLOW LOGO</div>
+      <div class="box">Email input field</div>
+      <div class="box">Password input field</div>
+      <div class="btn">Log In</div>
+      <div class="box" style="text-align:center; border:none; background:none;">— or —</div>
+      <div class="btn">Continue with Google</div>
+      <div class="box" style="text-align:center; border:none; background:none; font-size:10px;">Forgot password? · Create account</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: WORKSPACE / PROJECT LIST -->
+<div class="screen">
+  <div class="screen-label">Screen 2 — Workspace Dashboard (Project List)</div>
+  <div class="screen-body">
+    <div class="row" style="margin-bottom:12px;">
+      <div class="box flex1">Workspace: [Robotics Club ▾]</div>
+      <div class="box flex1" style="text-align:center;">Search projects</div>
+      <div class="btn">+ New Project</div>
+    </div>
+    <div class="row">
+      <div class="box flex1">
+        <div class="box dark placeholder-x" style="height:40px; margin-bottom:6px;"></div>
+        <strong>Competition Robot</strong><br>
+        12 tasks · 3 overdue
+      </div>
+      <div class="box flex1">
+        <div class="box dark placeholder-x" style="height:40px; margin-bottom:6px;"></div>
+        <strong>Outreach Event</strong><br>
+        6 tasks · on track
+      </div>
+      <div class="box flex1">
+        <div class="box dark placeholder-x" style="height:40px; margin-bottom:6px;"></div>
+        <strong>Sponsorship Deck</strong><br>
+        4 tasks · on track
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: KANBAN BOARD -->
+<div class="screen">
+  <div class="screen-label">Screen 3 — Kanban Board</div>
+  <div class="screen-body">
+    <div class="row" style="margin-bottom:12px;">
+      <div class="box flex2"><strong>Competition Robot</strong> / Board</div>
+      <div class="box flex1">Filter: Assignee ▾ Priority ▾</div>
+      <div class="btn">+ Task</div>
+    </div>
+    <div class="row">
+      <div class="kanban-col">
+        <div class="box dark" style="margin-bottom:8px; text-align:center;">TO DO (4)</div>
+        <div class="box kanban-card">
+          Order wheel motors
+          <div><span class="tag">High</span><span class="avatar"></span></div>
+        </div>
+        <div class="box kanban-card">
+          Draft rulebook checklist
+          <div><span class="tag">Med</span><span class="avatar"></span></div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="box dark" style="margin-bottom:8px; text-align:center;">IN PROGRESS (2)</div>
+        <div class="box kanban-card">
+          Chassis CAD model
+          <div><span class="tag">High</span><span class="avatar"></span><span class="avatar"></span></div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="box dark" style="margin-bottom:8px; text-align:center;">IN REVIEW (1)</div>
+        <div class="box kanban-card">
+          Wiring diagram
+          <div><span class="tag">Low</span><span class="avatar"></span></div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="box dark" style="margin-bottom:8px; text-align:center;">DONE (5)</div>
+        <div class="box kanban-card" style="opacity:0.6;">
+          Team roster finalized
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 4: TASK DETAIL -->
+<div class="screen">
+  <div class="screen-label">Screen 4 — Task Detail (Modal / Panel)</div>
+  <div class="screen-body">
+    <div class="row">
+      <div class="col flex2">
+        <div class="box dark"><strong>Chassis CAD model</strong></div>
+        <div class="box" style="min-height:50px;">Description text area (rich text)</div>
+        <div class="box dark" style="font-size:10px;">Checklist</div>
+        <div class="box">☑ Base plate sketched</div>
+        <div class="box">☐ Motor mounts positioned</div>
+        <div class="box dark" style="font-size:10px;">Comments</div>
+        <div class="box">
+          <span class="avatar"></span> <strong>@Jordan:</strong> uploaded v2 of the model, ready for review
+        </div>
+        <div class="box">Add a comment... (supports @mentions)</div>
+      </div>
+      <div class="col flex1">
+        <div class="box"><strong>Assignees</strong><br><span class="avatar"></span> <span class="avatar"></span> + Add</div>
+        <div class="box"><strong>Due date</strong><br>Jul 18, 2026</div>
+        <div class="box"><strong>Priority</strong><br>High</div>
+        <div class="box"><strong>Labels</strong><br><span class="tag">Hardware</span><span class="tag">CAD</span></div>
+        <div class="box"><strong>Attachments</strong><br>chassis_v2.step</div>
+        <div class="box" style="font-size:10px;"><strong>Activity</strong><br>Jordan moved this to In Progress · 2h ago</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 5: ANALYTICS DASHBOARD -->
+<div class="screen">
+  <div class="screen-label">Screen 5 — Analytics Dashboard</div>
+  <div class="screen-body">
+    <div class="row" style="margin-bottom:12px;">
+      <div class="box flex1">Project: [Competition Robot ▾]</div>
+      <div class="box flex1">Range: Last 30 days ▾</div>
+    </div>
+    <div class="row" style="margin-bottom:12px;">
+      <div class="box flex1">
+        <strong>Status Breakdown</strong>
+        <div class="chart-box">
+          <div class="bar" style="height:40%"></div>
+          <div class="bar" style="height:70%"></div>
+          <div class="bar" style="height:30%"></div>
+          <div class="bar" style="height:90%"></div>
+        </div>
+        <div style="font-size:9px; text-align:center;">To Do &nbsp; In Progress &nbsp; In Review &nbsp; Done</div>
+      </div>
+      <div class="box flex1">
+        <strong>Completion Trend</strong>
+        <div class="box dark placeholder-x" style="height:100px; margin-top:8px;"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="box flex1"><strong>Overdue Tasks</strong><br>3 tasks flagged</div>
+      <div class="box flex1"><strong>Workload</strong><br>Jordan: 5 · Priya: 2 · Marcus: 3</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

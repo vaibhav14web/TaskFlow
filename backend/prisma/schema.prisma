@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id                String            @id @default(uuid())
+  name              String
+  email             String            @unique
+  passwordHash      String
+  avatarUrl         String?
+  emailVerified     Boolean           @default(false)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  twoFactorEnabled     Boolean           @default(false)
+  twoFactorSecret      String?
+  twoFactorTempSecret  String?
+  twoFactorBackupCodes String?
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  ownedWorkspaces   Workspace[]       @relation("WorkspaceOwner")
+  memberships       WorkspaceMember[]
+  projects          Project[]
+  invitesSent       WorkspaceInvite[] @relation("InviteSender")
+  assignedTasks     Task[]            @relation("TaskAssignees")
+  activityLogs      ActivityLog[]
+  notifications     Notification[]
+  comments          Comment[]
+  timeLogs          TimeLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id             String            @id @default(uuid())
+  name           String
+  description    String?
+  allowedDomains String?
+  ownerId        String
+  owner          User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  createdAt      DateTime          @default(now())
+  
+  // Relations
+  members        WorkspaceMember[]
+  projects       Project[]
+  invites        WorkspaceInvite[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role
+  joinedAt    DateTime  @default(now())
+
+  @@id([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  board       Board?
+
+  @@map("projects")
+}
+
+model WorkspaceInvite {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String?   // null for shareable public links
+  token       String    @unique
+  role        Role      @default(MEMBER)
+  expiresAt   DateTime?
+  invitedById String
+  invitedBy   User      @relation("InviteSender", fields: [invitedById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@map("workspace_invites")
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns   Column[]
+
+  @@map("boards")
+}
+
+model Column {
+  id      String @id @default(uuid())
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  name    String
+  order   Int
+  tasks   Task[]
+
+  @@map("columns")
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  columnId    String
+  column      Column         @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  priority    TaskPriority   @default(MEDIUM)
+  dueDate     DateTime?
+  order       Int
+  labels      String[]       @default([])
+  createdAt   DateTime       @default(now())
+
+  // Relations
+  assignees    User[]         @relation("TaskAssignees")
+  checklist    ChecklistItem[]
+  attachments  Attachment[]
+  activityLogs ActivityLog[]
+  comments     Comment[]
+  timeLogs     TimeLog[]
+
+  @@index([columnId])
+  @@map("tasks")
+}
+
+
+model ChecklistItem {
+  id     String  @id @default(uuid())
+  taskId String
+  task   Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label  String
+  isDone Boolean @default(false)
+  order  Int
+
+  @@map("checklist_items")
+}
+
+model Attachment {
+  id         String   @id @default(uuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileUrl    String
+  fileName   String
+  fileSize   Int
+  uploadedAt DateTime @default(now())
+
+  @@map("attachments")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("activity_logs")
+}
+
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+
+model Comment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("comments")
+}
+
+model TimeLog {
+  id              String   @id @default(uuid())
+  taskId          String
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  durationSeconds Int
+  description     String?
+  loggedAt        DateTime @default(now())
+
+  @@map("time_logs")
+}
+
