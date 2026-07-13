@@ -8,6 +8,8 @@ import {
   requestPasswordReset,
   confirmPasswordReset,
   googleLogin,
+  googleAuthRedirect,
+  googleAuthCallback,
   getCurrentUser,
   getAuthConfig,
   setup2FA,
@@ -36,6 +38,8 @@ router.post('/logout', logout);
 router.post('/password-reset/request', passwordResetRequestRateLimiter, requestPasswordReset);
 router.post('/password-reset/confirm', passwordResetConfirmRateLimiter, confirmPasswordReset);
 router.post('/oauth/google', oauthRateLimiter, googleLogin);
+router.get('/oauth/google', oauthRateLimiter, googleAuthRedirect);
+router.get('/oauth/google/callback', oauthRateLimiter, googleAuthCallback);
 router.get('/me', requireAuth, getCurrentUser);
 router.get('/config', getAuthConfig);
 

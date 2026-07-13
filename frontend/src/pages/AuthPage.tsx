@@ -103,9 +103,19 @@ export default function AuthPage() {
         }
       } else if (mode === 'register') {
         await register(name, email, password);
-        toast.success('Account created! 🚀');
-        const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-        navigate(redirect);
+        // In dev/test: register() auto-logs in (verificationToken returned), so
+        // `user` will be set and the useEffect will navigate away automatically.
+        // In production: register() resolves without logging in — show the user
+        // a message to check their email instead of navigating to / (which would
+        // immediately bounce them back to /auth since they aren't logged in yet).
+        if (!localStorage.getItem('token')) {
+          toast.success('Account created! Check your email to verify before logging in. 📧');
+          setMode('login');
+        } else {
+          toast.success('Account created! 🚀');
+          const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+          navigate(redirect);
+        }
       } else if (mode === 'forgot') {
         await api.post('/auth/password-reset/request', { email });
         toast.success('Reset link sent — check your email 📧');
@@ -123,65 +133,64 @@ export default function AuthPage() {
     }
   };
 
-  const [googleClientId, setGoogleClientId] = useState<string | null>(null);
+  //  const [googleClientId, setGoogleClientId] = useState<string | null>(null);
   const [googleConfigChecked, setGoogleConfigChecked] = useState(false);
 
-  useEffect(() => {
-    api.get('/auth/config')
-      .then((res) => {
-        if (res.data?.data?.googleClientId) {
-          setGoogleClientId(res.data.data.googleClientId);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to retrieve Google Auth config from backend:', err);
-      })
-      .finally(() => {
-        setGoogleConfigChecked(true);
-      });
-  }, []);
+  // useEffect(() => {
+  //   api.get('/auth/config')
+  //     .then((res) => {
+  //       if (res.data?.data?.googleClientId) {
+  //         setGoogleClientId(res.data.data.googleClientId);
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.error('Failed to retrieve Google Auth config from backend:', err);
+  //     })
+  //     .finally(() => {
+  //       setGoogleConfigChecked(true);
+  //     });
+  // }, []);
 
-  const handleGoogleCredentialResponse = async (response: any) => {
-    setLoad(true);
-    try {
-      const res = await api.post('/auth/oauth/google', { token: response.credential });
-      if (res.data?.data?.access_token) {
-        localStorage.setItem('token', res.data.data.access_token);
-        localStorage.setItem('refreshToken', res.data.data.refresh_token);
-        toast.success('Logged in with Google! 🎉');
-        window.location.reload();
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Google OAuth failed');
-    } finally {
-      setLoad(false);
-    }
-  };
+  // const handleGoogleCredentialResponse = async (response: any) => {
+  //   setLoad(true);
+  //   try {
+  //     const res = await api.post('/auth/oauth/google', { token: response.credential });
+  //     if (res.data?.data?.access_token) {
+  //       localStorage.setItem('token', res.data.data.access_token);
+  //       localStorage.setItem('refreshToken', res.data.data.refresh_token);
+  //       toast.success('Logged in with Google! 🎉');
+  //       window.location.reload();
+  //     }
+  //   } catch (err: any) {
+  //     toast.error(err?.response?.data?.error?.message || 'Google OAuth failed');
+  //   } finally {
+  //     setLoad(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (googleClientId && (window as any).google && (mode === 'login' || mode === 'register')) {
-      (window as any).google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleCredentialResponse,
-      });
+  // useEffect(() => {
+  //   if (googleClientId && (window as any).google && (mode === 'login' || mode === 'register')) {
+  //     (window as any).google.accounts.id.initialize({
+  //       client_id: googleClientId,
+  //       callback: handleGoogleCredentialResponse,
+  //     });
 
-      const googleBtnElement = document.getElementById('google-signin-btn');
-      if (googleBtnElement) {
-        (window as any).google.accounts.id.renderButton(googleBtnElement, {
-          theme: 'outline',
-          size: 'large',
-          width: googleBtnElement.offsetWidth || 340,
-          text: 'continue_with',
-          shape: 'rectangular',
-        });
-      }
-    }
-  }, [googleClientId, mode, googleConfigChecked]);
+  //     const googleBtnElement = document.getElementById('google-signin-btn');
+  //     if (googleBtnElement) {
+  //       (window as any).google.accounts.id.renderButton(googleBtnElement, {
+  //         theme: 'outline',
+  //         size: 'large',
+  //         width: googleBtnElement.offsetWidth || 340,
+  //         text: 'continue_with',
+  //         shape: 'rectangular',
+  //       });
+  //     }
+  //   }
+  // }, [googleClientId, mode, googleConfigChecked]);
 
   const handleGoogleSignInClick = () => {
-    if (!googleClientId) {
-      toast.error('Google OAuth is not configured on the server. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env');
-    }
+    // Redirect to backend OAuth endpoint which will redirect to Google
+    window.location.href = `${import.meta.env.REACT_APP_API_URL || ''}/api/v1/auth/oauth/google`;
   };
 
 
@@ -499,33 +508,27 @@ export default function AuthPage() {
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>or</span>
               <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
             </div>
-            {googleClientId ? (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px' }}>
-                <div id="google-signin-btn" style={{ width: '100%' }} />
-              </div>
-            ) : (
-              <motion.button
-                type="button"
-                whileHover={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.15)' }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleSignInClick}
-                style={{
-                  width: '100%', padding: '10px', background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)', borderRadius: '9px',
-                  color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '13px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  fontFamily: 'inherit', transition: 'all 0.2s',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" style={{ opacity: 0.5 }}>
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Continue with Google
-              </motion.button>
-            )}
+            <motion.button
+              type="button"
+              whileHover={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.15)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleGoogleSignInClick}
+              style={{
+                width: '100%', padding: '10px', background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.07)', borderRadius: '9px',
+                color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '13px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                fontFamily: 'inherit', transition: 'all 0.2s',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" style={{ opacity: 0.5 }}>
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Continue with Google
+            </motion.button>
           </motion.div>
         )}
 

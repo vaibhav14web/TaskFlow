@@ -4,7 +4,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../utils/prisma';
 import { generateSecret, verifyTOTP } from '../utils/totp';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
-import { blacklistToken } from '../utils/auth';
+import { blacklistToken, isTokenBlacklisted } from '../utils/auth';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import config from '../utils/config';
 import logger from '../utils/logger';
@@ -191,6 +191,12 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
       return;
     }
 
+    // Reject blacklisted refresh tokens (e.g. tokens invalidated via logout)
+    if (isTokenBlacklisted(refresh_token)) {
+      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Refresh token has been revoked.' } });
+      return;
+    }
+
     try {
       const payload = verifyRefreshToken(refresh_token);
       const user = await prisma.user.findUnique({ where: { id: payload.userId } });
@@ -199,6 +205,9 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
         res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'User not found.' } });
         return;
       }
+
+      // Blacklist the old refresh token (token rotation — each refresh token is single-use)
+      blacklistToken(refresh_token);
 
       const newAccessToken = generateAccessToken(user.id);
       const newRefreshToken = generateRefreshToken(user.id);
@@ -221,10 +230,16 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 // 5. Logout
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Blacklist the access token
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       blacklistToken(token);
+    }
+    // Also blacklist the refresh token so it can't be used to mint new access tokens
+    const { refresh_token } = req.body;
+    if (refresh_token && typeof refresh_token === 'string') {
+      blacklistToken(refresh_token);
     }
     res.status(200).json({
       data: {
@@ -331,7 +346,7 @@ export const confirmPasswordReset = async (req: Request, res: Response, next: Ne
   }
 };
 
-// 8. Google OAuth Login
+// 8. Google OAuth Login (ID Token verification - popup mode)
 export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { token } = req.body;
@@ -420,6 +435,138 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
         }
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 8b. Google OAuth Redirect (Authorization Code Flow)
+export const googleAuthRedirect = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+
+    if (!clientId) {
+      res.status(501).json({
+        error: {
+          code: 'GOOGLE_AUTH_CONFIG_ERROR',
+          message: 'Google OAuth configuration is missing on the server.'
+        }
+      });
+      return;
+    }
+
+    const redirectUri = `${frontendUrl}/auth/callback/google`;
+    const scope = 'openid email profile';
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+
+    res.redirect(authUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 8c. Google OAuth Callback (Authorization Code Flow)
+export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code, error: oauthError } = req.query;
+
+    if (oauthError) {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
+      return;
+    }
+
+    if (!code || typeof code !== 'string') {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Missing authorization code')}`);
+      return;
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+    const redirectUri = `${frontendUrl}/auth/callback/google`;
+
+    if (!clientId || !clientSecret) {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Google OAuth not configured')}`);
+      return;
+    }
+
+    // Exchange authorization code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      console.error('Google token exchange failed:', tokenData);
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Failed to exchange authorization code')}`);
+      return;
+    }
+
+    const { id_token } = tokenData;
+
+    if (!id_token) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('No ID token received from Google')}`);
+      return;
+    }
+
+    // Verify ID token
+    const authClient = new OAuth2Client(clientId);
+    let ticket;
+    try {
+      ticket = await authClient.verifyIdToken({ idToken: id_token });
+    } catch (err) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Invalid ID token from Google')}`);
+      return;
+    }
+
+    const payload = ticket.getPayload();
+    if (!payload || payload.aud !== clientId) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Token validation failed')}`);
+      return;
+    }
+
+    const { email, name, picture } = payload;
+
+    if (!email) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Email not provided by Google')}`);
+      return;
+    }
+
+    // Find or create user
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      const dummyPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
+      user = await prisma.user.create({
+        data: {
+          name: name || email.split('@')[0],
+          email,
+          passwordHash: dummyPasswordHash,
+          avatarUrl: picture,
+          emailVerified: true
+        }
+      });
+    }
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Redirect to frontend with tokens in URL fragment (secure)
+    const redirectUrl = `${frontendUrl}/auth/callback/google#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&user_id=${encodeURIComponent(user.id)}&user_name=${encodeURIComponent(user.name)}&user_email=${encodeURIComponent(user.email)}&user_avatar=${encodeURIComponent(user.avatarUrl || '')}`;
+    res.redirect(redirectUrl);
   } catch (error) {
     next(error);
   }

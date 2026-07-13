@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
+import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import BoardPage from './pages/BoardPage';
 import JoinPage from './pages/JoinPage';
@@ -31,6 +32,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth/callback/google" element={<GoogleCallbackPage />} />
       <Route path="/join" element={<Guard><JoinPage /></Guard>} />
       <Route path="/prototypes" element={<PrototypeDemoPage />} />
       <Route path="/" element={<Guard><DashboardPage /></Guard>} />

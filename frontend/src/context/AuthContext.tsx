@@ -43,21 +43,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     const r: any = await authApi.register({ name, email, password });
-    if (r.data && r.data.verificationToken) {
-      // Auto-verify email (development/test environments only)
+
+    // In production, the backend does NOT return verificationToken in the response
+    // (only returned in dev/test mode for convenience). In production, user must
+    // verify their email manually before logging in.
+    if (r.data?.verificationToken) {
+      // Dev / test only: auto-verify email and auto-login so devs don't need
+      // to check their email every time they test registration.
       await api.post('/auth/verify-email', { token: r.data.verificationToken });
-      
-      // Auto-login
       const loginRes: any = await authApi.login({ email, password });
       localStorage.setItem('token', loginRes.data.access_token);
       localStorage.setItem('refreshToken', loginRes.data.refresh_token);
       setToken(loginRes.data.access_token);
       setUser(loginRes.data.user);
     }
+    // In production: register() simply resolves. The caller (AuthPage) is
+    // responsible for showing the "check your email" message. No auto-login.
   };
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    // Send refresh_token so backend can blacklist it too
     authApi.logout().catch(() => {});
+    // Fire-and-forget: tell backend to revoke the refresh token
+    if (refreshToken) {
+      api.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     setToken(null);
