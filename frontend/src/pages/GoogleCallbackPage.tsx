@@ -100,7 +100,7 @@ export default function GoogleCallbackPage() {
           <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#f5f5f7' }}>Completing sign in...</span>
         </div>
         
-        <style jsx>{`
+        <style>{`
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
