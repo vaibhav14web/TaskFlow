@@ -507,7 +507,7 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
       })
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenData: { id_token?: string; access_token?: string; error?: string; error_description?: string } = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
       console.error('Google token exchange failed:', tokenData);
