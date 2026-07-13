@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const resolveApiBaseUrl = () => {
-  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return 'http://localhost:5000';
   }

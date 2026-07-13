@@ -3,6 +3,7 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import config from './config';
 import logger from './logger';
+import { cache } from './cache';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
@@ -56,10 +57,11 @@ export const verifyLoginTicket = (token: string): { userId: string; isTwoFactorP
   return jwt.verify(token, ACCESS_SECRET) as { userId: string; isTwoFactorPending: boolean };
 };
 
-// Token Blacklist
+// Token revocation. Redis makes revocation visible to every server instance.
 const blacklistedTokens = new Set<string>();
+const revokedTokenCacheKey = (jti: string) => `auth:revoked:${jti}`;
 
-export const blacklistToken = (token: string): void => {
+export const blacklistToken = async (token: string): Promise<void> => {
   try {
     const decoded = jwt.decode(token) as TokenPayload & { exp?: number };
     if (decoded?.jti) {
@@ -70,19 +72,22 @@ export const blacklistToken = (token: string): void => {
         if (ttl > 0) {
           setTimeout(() => blacklistedTokens.delete(decoded.jti!), ttl);
         }
+        await cache.set(revokedTokenCacheKey(decoded.jti), true, Math.max(1, Math.ceil(ttl / 1000)));
       }
     }
-  } catch {
-    logger.warn('Failed to blacklist token');
+  } catch (err) {
+    logger.warn({ err }, 'Failed to revoke token');
   }
 };
 
-export const isTokenBlacklisted = (token: string): boolean => {
+export const isTokenBlacklisted = async (token: string): Promise<boolean> => {
   try {
     const decoded = jwt.decode(token) as TokenPayload;
-    return decoded?.jti ? blacklistedTokens.has(decoded.jti) : false;
-  } catch {
+    if (!decoded?.jti) return false;
+    if (blacklistedTokens.has(decoded.jti)) return true;
+    return Boolean(await cache.get<boolean>(revokedTokenCacheKey(decoded.jti)));
+  } catch (err) {
+    logger.warn({ err }, 'Failed to check token revocation');
     return false;
   }
 };
-

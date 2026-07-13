@@ -1138,7 +1138,7 @@ describe('PRODUCTION READINESS', () => {
     });
 
     it('allows requests from authorized origin', async () => {
-      const allowedOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+      const allowedOrigin = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
       const res = await request(app)
         .get('/health')
         .set('Origin', allowedOrigin);

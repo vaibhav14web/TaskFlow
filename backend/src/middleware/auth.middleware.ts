@@ -5,7 +5,7 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -14,7 +14,7 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
     }
 
     const token = authHeader.split(' ')[1];
-    if (isTokenBlacklisted(token)) {
+    if (await isTokenBlacklisted(token)) {
       res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Token has been revoked.' } });
       return;
     }

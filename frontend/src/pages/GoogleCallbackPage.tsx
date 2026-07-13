@@ -14,9 +14,6 @@ export default function GoogleCallbackPage() {
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       const userId = params.get('user_id');
-      const userName = params.get('user_name');
-      const userEmail = params.get('user_email');
-      const userAvatar = params.get('user_avatar');
 
       if (accessToken && refreshToken && userId) {
         localStorage.setItem('token', accessToken);

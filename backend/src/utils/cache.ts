@@ -2,6 +2,8 @@ import Redis from 'ioredis';
 import logger from './logger';
 
 let client: Redis;
+const testCache = new Map<string, { value: string; expiresAt: number }>();
+const useTestCache = () => process.env.NODE_ENV === 'test' && !process.env.REDIS_URL;
 
 const getClient = (): Redis => {
   if (!client) {
@@ -21,6 +23,14 @@ const getClient = (): Redis => {
 
 export const cache = {
   get: async <T>(key: string): Promise<T | null> => {
+    if (useTestCache()) {
+      const entry = testCache.get(key);
+      if (!entry || entry.expiresAt <= Date.now()) {
+        testCache.delete(key);
+        return null;
+      }
+      return JSON.parse(entry.value) as T;
+    }
     try {
       const redis = getClient();
       const raw = await redis.get(key);
@@ -33,6 +43,10 @@ export const cache = {
   },
 
   set: async <T>(key: string, value: T, ttlSeconds: number): Promise<void> => {
+    if (useTestCache()) {
+      testCache.set(key, { value: JSON.stringify(value), expiresAt: Date.now() + ttlSeconds * 1000 });
+      return;
+    }
     try {
       const redis = getClient();
       await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
@@ -42,6 +56,10 @@ export const cache = {
   },
 
   del: async (key: string): Promise<void> => {
+    if (useTestCache()) {
+      testCache.delete(key);
+      return;
+    }
     try {
       const redis = getClient();
       await redis.del(key);
@@ -51,6 +69,10 @@ export const cache = {
   },
 
   clear: async (): Promise<void> => {
+    if (useTestCache()) {
+      testCache.clear();
+      return;
+    }
     try {
       const redis = getClient();
       await redis.flushdb();

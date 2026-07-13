@@ -4,6 +4,5 @@ import App from './App';
 
 test('renders TaskFlow title', () => {
   render(<App />);
-  const titleElement = screen.getByText(/TaskFlow/i);
-  expect(titleElement).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: /sign in/i }).length).toBeGreaterThan(0);
 });

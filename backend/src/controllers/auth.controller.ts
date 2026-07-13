@@ -192,7 +192,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
     }
 
     // Reject blacklisted refresh tokens (e.g. tokens invalidated via logout)
-    if (isTokenBlacklisted(refresh_token)) {
+    if (await isTokenBlacklisted(refresh_token)) {
       res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Refresh token has been revoked.' } });
       return;
     }
@@ -207,7 +207,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
       }
 
       // Blacklist the old refresh token (token rotation — each refresh token is single-use)
-      blacklistToken(refresh_token);
+      await blacklistToken(refresh_token);
 
       const newAccessToken = generateAccessToken(user.id);
       const newRefreshToken = generateRefreshToken(user.id);
@@ -234,12 +234,12 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      blacklistToken(token);
+      await blacklistToken(token);
     }
     // Also blacklist the refresh token so it can't be used to mint new access tokens
-    const { refresh_token } = req.body;
+    const { refresh_token } = req.body ?? {};
     if (refresh_token && typeof refresh_token === 'string') {
-      blacklistToken(refresh_token);
+      await blacklistToken(refresh_token);
     }
     res.status(200).json({
       data: {
@@ -825,5 +825,4 @@ export const disable2FA = async (req: AuthenticatedRequest, res: Response, next:
     next(error);
   }
 };
-
 
