@@ -19,7 +19,7 @@ const poolerUrl = connectionString.includes('pgbouncer')
 const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
 const pool = new Pool({
   connectionString: poolerUrl,
-  ssl: isLocal ? undefined : { rejectUnauthorized: false }
+  ssl: isLocal ? false : { rejectUnauthorized: false }
 });
 const adapter = new PrismaPg(pool);
 
