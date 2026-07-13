@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://taskflow-j39g.onrender.com/api/$1" },
     { "source": "/uploads/(.*)", "destination": "https://taskflow-j39g.onrender.com/uploads/$1" },
