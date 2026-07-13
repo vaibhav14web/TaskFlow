@@ -135,7 +135,7 @@ export default function AuthPage() {
 
   const handleGoogleSignInClick = () => {
     // Redirect to backend OAuth endpoint which will redirect to Google
-    window.location.href = `${import.meta.env.REACT_APP_API_URL || ''}/api/v1/auth/oauth/google`;
+    window.location.href = `${process.env.REACT_APP_API_URL || ''}/api/v1/auth/oauth/google`;
   };
 
 
