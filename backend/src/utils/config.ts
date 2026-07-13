@@ -2,7 +2,7 @@ const config = {
   server: {
     port: parseInt(process.env.PORT || '5000', 10),
     bodyLimit: process.env.BODY_LIMIT || '1mb',
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    corsOrigin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
 
   jwt: {
