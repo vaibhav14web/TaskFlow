@@ -22,13 +22,6 @@ export default function GoogleCallbackPage() {
         localStorage.setItem('token', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
         
-        const user = {
-          id: userId,
-          name: userName,
-          email: userEmail,
-          avatarUrl: userAvatar || undefined
-        };
-        
         toast.success('Logged in with Google! 🎉');
         
         const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
