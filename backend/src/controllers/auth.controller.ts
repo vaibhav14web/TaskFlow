@@ -444,19 +444,7 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
 export const googleAuthRedirect = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
-
-    if (!clientId) {
-      res.status(501).json({
-        error: {
-          code: 'GOOGLE_AUTH_CONFIG_ERROR',
-          message: 'Google OAuth configuration is missing on the server.'
-        }
-      });
-      return;
-    }
-
-    const redirectUri = `${frontendUrl}/auth/callback/google`;
+    const redirectUri = 'https://task-flow-five-pearl.vercel.app/auth/callback/google';
     const scope = 'openid email profile';
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
 
