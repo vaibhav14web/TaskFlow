@@ -21,6 +21,9 @@ import logger from './utils/logger';
 
 const app = express();
 
+// Trust proxy for correct client IP behind Render/Cloudflare
+app.set('trust proxy', 1);
+
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
