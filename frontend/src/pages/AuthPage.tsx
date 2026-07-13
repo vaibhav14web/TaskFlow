@@ -70,6 +70,24 @@ export default function AuthPage() {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (token) {
+      const verify = async () => {
+        try {
+          await api.post('/auth/verify-email', { token });
+          toast.success('Email verified successfully! You can now log in. 🎉');
+        } catch (err: any) {
+          toast.error(err?.response?.data?.error?.message || 'Email verification failed.');
+        } finally {
+          // Remove token from query parameters
+          navigate('/auth', { replace: true });
+        }
+      };
+      verify();
+    }
+  }, [navigate]);
+
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showNewPw, setShowNewPw] = useState(false);
