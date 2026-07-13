@@ -8,7 +8,11 @@ if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is required but not set.');
 }
 
-const pool = new Pool({ connectionString });
+const poolerUrl = connectionString.includes('pgbouncer') 
+  ? connectionString 
+  : `${connectionString}${connectionString.includes('?') ? '&' : '?'}pgbouncer=true&connection_limit=5`;
+
+const pool = new Pool({ connectionString: poolerUrl });
 const adapter = new PrismaPg(pool);
 
 export const prisma = new PrismaClient({ adapter });
