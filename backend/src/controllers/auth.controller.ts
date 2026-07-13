@@ -18,6 +18,9 @@ import {
   verifyLoginTicket
 } from '../utils/auth';
 
+const getGoogleRedirectUri = (): string =>
+  process.env.GOOGLE_OAUTH_REDIRECT_URI || 'https://taskflow-j39g.onrender.com/api/v1/auth/oauth/google/callback';
+
 // Helper: Validate email format
 const isValidEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -444,7 +447,7 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
 export const googleAuthRedirect = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = 'https://task-flow-five-pearl.vercel.app/auth/callback/google';
+    const redirectUri = getGoogleRedirectUri();
     const scope = 'openid email profile';
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
 
@@ -474,7 +477,7 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
-    const redirectUri = `${frontendUrl}/auth/callback/google`;
+    const redirectUri = getGoogleRedirectUri();
 
     if (!clientId || !clientSecret) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
@@ -825,4 +828,3 @@ export const disable2FA = async (req: AuthenticatedRequest, res: Response, next:
     next(error);
   }
 };
-
