@@ -22,7 +22,7 @@ export default function GoogleCallbackPage() {
         toast.success('Logged in with Google! 🎉');
         
         const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-        navigate(redirect, { replace: true });
+        window.location.href = redirect;
       } else {
         const error = searchParams.get('error');
         if (error) {
