@@ -4,12 +4,22 @@ import { prisma } from './prisma';
 import { verifyAccessToken } from './auth';
 import logger from './logger';
 
+const getOrigin = (url?: string): string => {
+  if (!url) return 'http://localhost:3000';
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return url;
+  }
+};
+
 let io: Server | null = null;
 
 export const initSocket = (server: http.Server): Server => {
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: getOrigin(process.env.FRONTEND_URL || process.env.CORS_ORIGIN),
       methods: ['GET', 'POST'],
       credentials: true
     },

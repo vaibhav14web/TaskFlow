@@ -1,8 +1,18 @@
+const getOrigin = (url?: string): string => {
+  if (!url) return 'http://localhost:3000';
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return url;
+  }
+};
+
 const config = {
   server: {
     port: parseInt(process.env.PORT || '5000', 10),
     bodyLimit: process.env.BODY_LIMIT || '1mb',
-    corsOrigin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000',
+    corsOrigin: getOrigin(process.env.FRONTEND_URL || process.env.CORS_ORIGIN),
   },
 
   jwt: {
