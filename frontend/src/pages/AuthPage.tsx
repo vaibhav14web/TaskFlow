@@ -133,61 +133,6 @@ export default function AuthPage() {
     }
   };
 
-  //  const [googleClientId, setGoogleClientId] = useState<string | null>(null);
-  const [googleConfigChecked, setGoogleConfigChecked] = useState(false);
-
-  // useEffect(() => {
-  //   api.get('/auth/config')
-  //     .then((res) => {
-  //       if (res.data?.data?.googleClientId) {
-  //         setGoogleClientId(res.data.data.googleClientId);
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.error('Failed to retrieve Google Auth config from backend:', err);
-  //     })
-  //     .finally(() => {
-  //       setGoogleConfigChecked(true);
-  //     });
-  // }, []);
-
-  // const handleGoogleCredentialResponse = async (response: any) => {
-  //   setLoad(true);
-  //   try {
-  //     const res = await api.post('/auth/oauth/google', { token: response.credential });
-  //     if (res.data?.data?.access_token) {
-  //       localStorage.setItem('token', res.data.data.access_token);
-  //       localStorage.setItem('refreshToken', res.data.data.refresh_token);
-  //       toast.success('Logged in with Google! 🎉');
-  //       window.location.reload();
-  //     }
-  //   } catch (err: any) {
-  //     toast.error(err?.response?.data?.error?.message || 'Google OAuth failed');
-  //   } finally {
-  //     setLoad(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (googleClientId && (window as any).google && (mode === 'login' || mode === 'register')) {
-  //     (window as any).google.accounts.id.initialize({
-  //       client_id: googleClientId,
-  //       callback: handleGoogleCredentialResponse,
-  //     });
-
-  //     const googleBtnElement = document.getElementById('google-signin-btn');
-  //     if (googleBtnElement) {
-  //       (window as any).google.accounts.id.renderButton(googleBtnElement, {
-  //         theme: 'outline',
-  //         size: 'large',
-  //         width: googleBtnElement.offsetWidth || 340,
-  //         text: 'continue_with',
-  //         shape: 'rectangular',
-  //       });
-  //     }
-  //   }
-  // }, [googleClientId, mode, googleConfigChecked]);
-
   const handleGoogleSignInClick = () => {
     // Redirect to backend OAuth endpoint which will redirect to Google
     window.location.href = `${import.meta.env.REACT_APP_API_URL || ''}/api/v1/auth/oauth/google`;
