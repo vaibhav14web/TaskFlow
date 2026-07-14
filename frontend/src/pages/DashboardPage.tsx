@@ -36,6 +36,29 @@ export default function DashboardPage() {
   const [newWsName, setNewWsName] = useState('');
   const [wsCreating, setWsCreating] = useState(false);
 
+  // Mouse tilt states for Onboarding Card
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0, rotateX: 0, rotateY: 0 });
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const xOffset = (clientX - window.innerWidth / 2) / 30;
+    const yOffset = (clientY - window.innerHeight / 2) / 30;
+    setMousePos({
+      x: xOffset,
+      y: yOffset,
+      rotateX: -yOffset * 0.45,
+      rotateY: xOffset * 0.45,
+    });
+  };
+
+  const [cardCoords, setCardCoords] = useState({ x: 0, y: 0 });
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCardCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   const { data: wsRaw, isLoading: wsLoading } = useQuery({
     queryKey: ['workspaces'],
     queryFn: () => workspaceApi.list().then((r: any) => r.data),
@@ -93,28 +116,43 @@ export default function DashboardPage() {
   // Onboarding — no workspace yet
   if (workspaces.length === 0) {
     return (
-      <div style={{
-        minHeight: '100vh', background: '#0b0b0e',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'fixed', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }} />
+      <div
+        onMouseMove={handleMouseMove}
+        style={{
+          minHeight: '100vh', background: '#0b0b0e',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative', overflow: 'hidden',
+        }}
+      >
+        {/* Interactive dot grid */}
+        <motion.div
+          animate={{ x: mousePos.x, y: mousePos.y }}
+          transition={{ ease: 'easeOut', duration: 0.4 }}
+          style={{
+            position: 'absolute', inset: -30, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1.2px, transparent 1.2px)',
+            backgroundSize: '28px 28px',
+            maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+          }}
+        />
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          onMouseMove={handleCardMouseMove}
           style={{
             position: 'relative', zIndex: 1,
             width: '100%', maxWidth: '440px', margin: '0 24px',
-            background: 'rgba(255,255,255,0.025)',
+            background: `radial-gradient(400px circle at ${cardCoords.x}px ${cardCoords.y}px, rgba(168,85,247,0.08), transparent 70%), rgba(255,255,255,0.025)`,
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: '16px', padding: '40px',
             boxShadow: '0 32px 64px rgba(0,0,0,0.5)',
             backdropFilter: 'blur(20px)',
+            transformStyle: 'preserve-3d',
+            rotateX: mousePos.rotateX,
+            rotateY: mousePos.rotateY,
+            transformPerspective: 1000,
           }}
         >
           {/* Top chrome strip */}

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { motion, useScroll, useTransform, useMotionValue, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap, Users, BarChart2, Layers, CheckCircle, ArrowRight,
-  Star, Shield, Clock, Sparkles, Globe, ChevronRight
+  Star, Shield, Clock, Sparkles, Globe, ChevronRight, DollarSign
 } from 'lucide-react';
 
 /* ── Floating Glass Card ──────────────────────────── */
@@ -18,20 +18,32 @@ function GlassCard({
   delay?: number;
   className?: string;
 }) {
+  const spotlightX = useMotionValue(0);
+  const spotlightY = useMotionValue(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    spotlightX.set(e.clientX - rect.left);
+    spotlightY.set(e.clientY - rect.top);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -5, boxShadow: '0 12px 40px rgba(168,85,247,0.12), inset 0 1px 0 rgba(255,255,255,0.12)' }}
+      onMouseMove={handleMouseMove}
+      whileHover={{ y: -5, boxShadow: '0 12px 40px rgba(168,85,247,0.15), inset 0 1px 0 rgba(255,255,255,0.12)' }}
       style={{
-        background: 'rgba(255,255,255,0.035)',
+        background: 'radial-gradient(400px circle at var(--spotlight-x, 0px) var(--spotlight-y, 0px), rgba(168,85,247,0.07), transparent 70%), rgba(255,255,255,0.035)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 20,
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
         transition: 'box-shadow 0.3s, border-color 0.3s',
+        ['--spotlight-x' as any]: useTransform(spotlightX, (val) => `${val}px`),
+        ['--spotlight-y' as any]: useTransform(spotlightY, (val) => `${val}px`),
         ...style,
       }}
       className={className}
@@ -137,19 +149,29 @@ function FloatingTaskCard({ title, tag, tag2, avatar, progress, delay }: {
 function FeatureCard({ icon: Icon, title, desc, gradient, delay }: {
   icon: React.ElementType; title: string; desc: string; gradient: string; delay: number;
 }) {
+  const spotlightX = useMotionValue(0);
+  const spotlightY = useMotionValue(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    spotlightX.set(e.clientX - rect.left);
+    spotlightY.set(e.clientY - rect.top);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={handleMouseMove}
       whileHover={{
         y: -6,
         borderColor: 'rgba(168,85,247,0.3)',
-        boxShadow: '0 12px 40px rgba(168,85,247,0.12), inset 0 1px 0 rgba(255,255,255,0.12)',
+        boxShadow: '0 12px 40px rgba(168,85,247,0.15), inset 0 1px 0 rgba(255,255,255,0.12)',
       }}
       style={{
-        background: 'rgba(255,255,255,0.025)',
+        background: 'radial-gradient(300px circle at var(--spotlight-x, 0px) var(--spotlight-y, 0px), rgba(99,102,241,0.08), transparent 75%), rgba(255,255,255,0.025)',
         backdropFilter: 'blur(20px)',
         border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: 18,
@@ -161,6 +183,8 @@ function FeatureCard({ icon: Icon, title, desc, gradient, delay }: {
         transition: 'border-color 0.25s, box-shadow 0.25s, transform 0.25s',
         position: 'relative',
         overflow: 'hidden',
+        ['--spotlight-x' as any]: useTransform(spotlightX, (val) => `${val}px`),
+        ['--spotlight-y' as any]: useTransform(spotlightY, (val) => `${val}px`),
       }}
     >
       {/* top gradient line */}
@@ -215,7 +239,30 @@ function StatCard({ number, label, delay }: { number: string; label: string; del
 }
 
 /* ── Navbar ────────────────────────────────────────── */
-function Navbar({ onGetStarted }: { onGetStarted: () => void }) {
+interface NavbarProps {
+  onGetStarted: () => void;
+  onScrollToFeatures: () => void;
+  onScrollToPricing: () => void;
+  onGoToBlog: () => void;
+  onGoToDocs: () => void;
+}
+
+function NavLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <motion.span
+      onClick={onClick}
+      whileHover={{ color: '#f5f5f7' }}
+      style={{
+        fontSize: '13px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500,
+        transition: 'color 0.15s',
+      }}
+    >
+      {children}
+    </motion.span>
+  );
+}
+
+function Navbar({ onGetStarted, onScrollToFeatures, onScrollToPricing, onGoToBlog, onGoToDocs }: NavbarProps) {
   return (
     <motion.nav
       initial={{ opacity: 0, y: -20 }}
@@ -232,7 +279,7 @@ function Navbar({ onGetStarted }: { onGetStarted: () => void }) {
       }}
     >
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
         <div style={{
           width: 32, height: 32, borderRadius: 9,
           background: 'linear-gradient(135deg, #a855f7, #6366f1)',
@@ -247,15 +294,10 @@ function Navbar({ onGetStarted }: { onGetStarted: () => void }) {
 
       {/* Nav links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        {['Features', 'Pricing', 'Blog', 'Docs'].map(item => (
-          <span key={item} style={{
-            fontSize: '13px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500,
-            transition: 'color 0.2s',
-          }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#f5f5f7')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-          >{item}</span>
-        ))}
+        <NavLink onClick={onScrollToFeatures}>Features</NavLink>
+        <NavLink onClick={onScrollToPricing}>Pricing</NavLink>
+        <NavLink onClick={onGoToBlog}>Blog</NavLink>
+        <NavLink onClick={onGoToDocs}>Docs</NavLink>
       </div>
 
       {/* CTA */}
@@ -292,6 +334,46 @@ function Navbar({ onGetStarted }: { onGetStarted: () => void }) {
   );
 }
 
+/* ── Cyber floating network node lines ──────────────── */
+function GridLineNetwork() {
+  return null;
+}
+
+/* ── Floating Cyber Particle ────────────────────────── */
+function Particle({ x, y, size, delay, duration, color = 'rgba(168,85,247,0.45)' }: {
+  x: number; y: number; size: number; delay: number; duration: number; color?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{
+        opacity: [0, 0.6, 0.8, 0.3, 0],
+        y: [0, -80, -160, -240],
+        x: [0, size * 6, size * -5, size * 7],
+        scale: [0.5, 1.3, 0.9, 0.5],
+      }}
+      transition={{
+        delay,
+        duration,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+      style={{
+        position: 'absolute',
+        left: `${x}%`,
+        top: `${y}%`,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: color,
+        boxShadow: `0 0 ${size * 3}px ${color}`,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  );
+}
+
 /* ── MAIN LANDING PAGE ─────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -308,6 +390,67 @@ export default function LandingPage() {
       y: (clientY - window.innerHeight / 2) / 35,
     });
   };
+
+  // Generate background particles once
+  const particles = useMemo(() => Array.from({ length: 25 }).map((_, i) => ({
+    id: i,
+    x: 5 + (i * 27.3) % 90,
+    y: 10 + (i * 35.7) % 80,
+    size: 2 + (i % 4),
+    delay: (i * 0.3) % 5,
+    duration: 6 + (i % 5),
+    color: i % 2 === 0 ? 'rgba(168,85,247,0.35)' : 'rgba(99,102,241,0.35)',
+  })), []);
+
+  const [statsData, setStatsData] = useState({
+    users: 0,
+    workspaces: 0,
+    projects: 0,
+    tasks: 0,
+    apiLatency: 0,
+    uptimeSla: '99.99%',
+  });
+
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const pricingRef = useRef<HTMLDivElement>(null);
+
+  const scrollToFeatures = () => featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToPricing = () => pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const goToPricing = () => navigate('/pricing');
+  const goToBlog = () => navigate('/blog');
+  const goToDocs = () => navigate('/docs');
+
+  useEffect(() => {
+    const startTime = performance.now();
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiUrl}/api/v1/public/stats`)
+      .then(r => r.json())
+      .then(res => {
+        const endTime = performance.now();
+        if (res?.data) {
+          setStatsData({
+            users: res.data.users,
+            workspaces: res.data.workspaces,
+            projects: res.data.projects,
+            tasks: res.data.tasks,
+            apiLatency: Math.round(endTime - startTime),
+            uptimeSla: res.data.uptimeSla || '99.99%',
+          });
+        }
+      })
+      .catch(() => {
+        setStatsData({
+          users: 24,
+          workspaces: 8,
+          projects: 14,
+          tasks: 125,
+          apiLatency: Math.round(performance.now() - startTime),
+          uptimeSla: '99.99%',
+        });
+      });
+  }, []);
 
   const goToAuth = () => navigate('/auth');
 
@@ -333,7 +476,13 @@ export default function LandingPage() {
         position: 'relative',
       }}
     >
-      <Navbar onGetStarted={goToAuth} />
+      <Navbar
+        onGetStarted={goToAuth}
+        onScrollToFeatures={scrollToFeatures}
+        onScrollToPricing={scrollToPricing}
+        onGoToBlog={goToBlog}
+        onGoToDocs={goToDocs}
+      />
 
       {/* ── HERO SECTION ─────────────────────────────── */}
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -343,10 +492,18 @@ export default function LandingPage() {
         <GlowOrb initialX="85%" initialY="45%" color="#6366f1" size={550} duration={14} delay={2} />
         <GlowOrb initialX="50%" initialY="80%" color="#3b82f6" size={500} duration={16} delay={4} />
 
+        {/* Scanning Grid Laser lines */}
+        <GridLineNetwork />
+
+        {/* Floating particles */}
+        {particles.map(p => (
+          <Particle key={p.id} {...p} />
+        ))}
+
         {/* Interactive parallax dot grid */}
         <motion.div
           animate={{ x: mousePos.x, y: mousePos.y }}
-          transition={{ type: 'easeOut', duration: 0.4 }}
+          transition={{ ease: 'easeOut', duration: 0.4 }}
           style={{
             position: 'absolute', inset: -40, zIndex: 0,
             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1.2px, transparent 1.2px)',
@@ -492,23 +649,30 @@ export default function LandingPage() {
                   {[1,2,3,4,5].map(i => <Star key={i} size={11} color="#f59e0b" fill="#f59e0b" />)}
                 </div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                  Trusted by <b style={{ color: 'rgba(255,255,255,0.7)' }}>2,400+</b> teams worldwide
+                  Trusted by <b style={{ color: 'rgba(255,255,255,0.7)' }}>{statsData.workspaces || '—'}</b> active workspaces
                 </div>
               </div>
             </motion.div>
           </motion.div>
 
-          {/* Right: Floating Glass UI Mockup with Staggered floating layers */}
+          {/* Right: Floating Glass UI Mockup with Staggered 3D Parallax layers */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            style={{ position: 'relative', minHeight: 520 }}
+            style={{
+              position: 'relative',
+              minHeight: 520,
+              transform: `perspective(1000px) rotateX(${-mousePos.y * 0.45}deg) rotateY(${mousePos.x * 0.45}deg)`,
+              transition: 'transform 0.15s ease-out',
+              transformStyle: 'preserve-3d'
+            }}
           >
             {/* Main dashboard card — gently floats up and down */}
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformStyle: 'preserve-3d' }}
             >
               <GlassCard delay={0.3} style={{ padding: 20 }}>
                 {/* Mini top bar */}
@@ -556,11 +720,14 @@ export default function LandingPage() {
               </GlassCard>
             </motion.div>
 
-            {/* Floating analytics mini card — floats at different speed */}
+            {/* Floating analytics mini card — floats at different speed + counter parallax */}
             <motion.div
               animate={{ y: [0, 8, 0], x: [0, -4, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              style={{ position: 'absolute', top: -28, right: -24, zIndex: 2 }}
+              style={{
+                position: 'absolute', top: -28, right: -24, zIndex: 2,
+                transform: `translate3d(${-mousePos.x * 0.3}px, ${-mousePos.y * 0.3}px, 40px)`
+              }}
             >
               <GlassCard
                 delay={0.6}
@@ -594,11 +761,14 @@ export default function LandingPage() {
               </GlassCard>
             </motion.div>
 
-            {/* Floating notification mini card — floats at third speed */}
+            {/* Floating notification mini card — floats at third speed + counter parallax */}
             <motion.div
               animate={{ y: [0, -8, 0], x: [0, 5, 0] }}
               transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-              style={{ position: 'absolute', bottom: -20, left: -24, zIndex: 2 }}
+              style={{
+                position: 'absolute', bottom: -20, left: -24, zIndex: 2,
+                transform: `translate3d(${-mousePos.x * 0.2}px, ${-mousePos.y * 0.2}px, 60px)`
+              }}
             >
               <GlassCard
                 delay={0.7}
@@ -635,10 +805,10 @@ export default function LandingPage() {
               display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, textAlign: 'center',
             }}>
               {[
-                { number: '99.9%', label: 'Uptime SLA' },
-                { number: '2,400+', label: 'Teams Active' },
-                { number: '< 80ms', label: 'API Latency' },
-                { number: '5M+', label: 'Tasks Managed' },
+                { number: statsData.uptimeSla, label: 'Uptime SLA' },
+                { number: `${statsData.workspaces}`, label: 'Active Workspaces' },
+                { number: `${statsData.apiLatency}ms`, label: 'API Latency (Live)' },
+                { number: `${statsData.tasks}`, label: 'Tasks Managed' },
               ].map((s, i) => (
                 <StatCard key={i} {...s} delay={i * 0.08} />
               ))}
@@ -648,7 +818,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ───────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '80px 24px', zIndex: 1 }}>
+      <section ref={featuresRef} style={{ position: 'relative', padding: '80px 24px', zIndex: 1 }}>
         <GlowOrb initialX="50%" initialY="50%" color="rgba(99,102,241,0.4)" size={750} duration={14} />
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <motion.div
@@ -687,6 +857,193 @@ export default function LandingPage() {
             {features.map((f) => (
               <FeatureCard key={f.title} {...f} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING SECTION ─────────────────────────── */}
+      <section ref={pricingRef} style={{ position: 'relative', padding: '80px 24px', zIndex: 1 }}>
+        <GlowOrb initialX="15%" initialY="50%" color="rgba(168,85,247,0.3)" size={650} duration={16} />
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: 'center', marginBottom: 44 }}
+          >
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(168,85,247,0.1)',
+              border: '1px solid rgba(168,85,247,0.2)',
+              borderRadius: 99, padding: '4px 14px 4px 8px',
+              marginBottom: 20,
+            }}>
+              <DollarSign size={12} color="#c084fc" />
+              <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 600 }}>Simple pricing</span>
+            </div>
+            <h2 style={{
+              fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.04em',
+              margin: '0 0 14px',
+            }}>
+              Plans that grow with you
+            </h2>
+            <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', maxWidth: 500, margin: '0 auto 28px', lineHeight: 1.7 }}>
+              Start for free, then upgrade as your team scales. No hidden fees.
+            </p>
+
+            {/* Monthly/Yearly toggle */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: 4 }}>
+              <button
+                type="button"
+                onClick={() => setBillingCycle('monthly')}
+                style={{
+                  border: 'none', borderRadius: 99, padding: '6px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  background: billingCycle === 'monthly' ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'transparent',
+                  color: billingCycle === 'monthly' ? '#fff' : 'rgba(255,255,255,0.4)',
+                  transition: 'all 0.2s',
+                }}
+              >Monthly</button>
+              <button
+                type="button"
+                onClick={() => setBillingCycle('yearly')}
+                style={{
+                  border: 'none', borderRadius: 99, padding: '6px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  background: billingCycle === 'yearly' ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'transparent',
+                  color: billingCycle === 'yearly' ? '#fff' : 'rgba(255,255,255,0.4)',
+                  transition: 'all 0.2s',
+                }}
+              >Yearly <span style={{ color: '#22c55e', fontSize: '10px' }}>-20%</span></button>
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <span
+                onClick={goToPricing}
+                style={{ fontSize: '13px', color: '#c084fc', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500, transition: 'all 0.2s' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLSpanElement).style.textDecoration = 'underline';
+                  (e.currentTarget as HTMLSpanElement).style.color = '#a855f7';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLSpanElement).style.textDecoration = 'none';
+                  (e.currentTarget as HTMLSpanElement).style.color = '#c084fc';
+                }}
+              >
+                Compare all features in detail <ChevronRight size={14} />
+              </span>
+            </div>
+          </motion.div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: 24,
+            alignItems: 'stretch',
+          }}>
+            {/* Free Plan */}
+            <GlassCard delay={0.1} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ flexGrow: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Free</h3>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Perfect for side projects and freelancers.</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>$0</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ forever</span>
+                </div>
+                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['1 Workspace', 'Up to 3 active projects', 'Up to 10 workspace members', 'Standard kanban boards', 'Basic time logs'].map((feat, idx) => (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+                      <CheckCircle size={14} color="#a855f7" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <motion.button
+                onClick={goToAuth}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  width: '100%', padding: '11px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 10, color: '#f5f5f7', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Sign Up Free
+              </motion.button>
+            </GlassCard>
+
+            {/* Pro Plan */}
+            <GlassCard delay={0.2} style={{
+              padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%',
+              borderColor: 'rgba(168,85,247,0.3)',
+              boxShadow: '0 12px 40px rgba(168,85,247,0.15)',
+              position: 'relative',
+            }}>
+              <div style={{
+                position: 'absolute', top: -12, right: 28,
+                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                padding: '4px 12px', borderRadius: 99, fontSize: '10px', fontWeight: 750, color: '#fff',
+                boxShadow: '0 4px 12px rgba(168,85,247,0.3)',
+              }}>RECOMMENDED</div>
+              <div style={{ flexGrow: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Pro</h3>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>For active teams requiring high velocity.</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>
+                    ${billingCycle === 'monthly' ? '12' : '10'}
+                  </span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ member / month</span>
+                </div>
+                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['Unlimited Workspaces', 'Unlimited active projects', 'Unlimited workspace members', 'Priority board time logs & analytics', 'CSV & Billing PDF Exports', 'Custom task categories', 'Priority support'].map((feat, idx) => (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+                      <CheckCircle size={14} color="#a855f7" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <motion.button
+                onClick={goToAuth}
+                whileHover={{ scale: 1.02, boxShadow: '0 8px 24px rgba(168,85,247,0.3)' }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  width: '100%', padding: '11px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none',
+                  borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Get Started
+              </motion.button>
+            </GlassCard>
+
+            {/* Enterprise Plan */}
+            <GlassCard delay={0.3} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ flexGrow: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Enterprise</h3>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Custom security, scale and SLA requirements.</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>Custom</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ custom contract</span>
+                </div>
+                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['Everything in Pro', 'SSO / SAML Okta Login Integration', 'Dedicated database nodes', '99.99% Guaranteed SLA contract', 'Dedicated Account Manager', 'Custom integrations & reports'].map((feat, idx) => (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+                      <CheckCircle size={14} color="#a855f7" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <motion.button
+                onClick={goToAuth}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  width: '100%', padding: '11px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 10, color: '#f5f5f7', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Contact Sales
+              </motion.button>
+            </GlassCard>
           </div>
         </div>
       </section>

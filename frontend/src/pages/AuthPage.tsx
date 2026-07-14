@@ -9,40 +9,28 @@ import api from '../api';
 /* ── Keycap Badge ──────────────────────────────────── */
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1px 6px', borderRadius: '5px', fontSize: '10px', fontWeight: 600,
-      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
-      color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', lineHeight: 1.6,
-      boxShadow: '0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)',
-      userSelect: 'none',
-    }}>
+    <motion.span
+      whileHover={{ y: -2, scale: 1.05, borderColor: 'rgba(168,85,247,0.3)', color: '#a855f7' }}
+      whileTap={{ scale: 0.95 }}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        padding: '1px 6px', borderRadius: '5px', fontSize: '10px', fontWeight: 600,
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
+        color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', lineHeight: 1.6,
+        boxShadow: '0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)',
+        userSelect: 'none',
+        cursor: 'pointer',
+        transition: 'color 0.2s, border-color 0.2s',
+      }}
+    >
       {children}
-    </span>
+    </motion.span>
   );
 }
 
 /* ── Cyber floating network node lines ──────────────── */
 function GridLineNetwork() {
-  return (
-    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
-      {/* Dynamic scanning laser line */}
-      <motion.line
-        x1="0%" y1="0%" x2="100%" y2="0%"
-        stroke="rgba(168,85,247,0.15)"
-        strokeWidth="2"
-        animate={{ y1: ['0%', '100%', '0%'], y2: ['0%', '100%', '0%'] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-      />
-      <motion.line
-        x1="0%" y1="0%" x2="0%" y2="100%"
-        stroke="rgba(99,102,241,0.15)"
-        strokeWidth="2"
-        animate={{ x1: ['0%', '100%', '0%'], x2: ['0%', '100%', '0%'] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'linear', delay: 1 }}
-      />
-    </svg>
-  );
+  return null;
 }
 
 /* ── Floating Cyber Particle ────────────────────────── */
@@ -163,6 +151,26 @@ export default function AuthPage() {
       y: yOffset,
       rotateX: -yOffset * 0.4,
       rotateY: xOffset * 0.4,
+    });
+  };
+
+  // Coordinates for the form card spotlight
+  const [cardCoords, setCardCoords] = useState({ x: 0, y: 0 });
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCardCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  // Coordinates for the Password input spotlight
+  const [pwCoords, setPwCoords] = useState({ x: 0, y: 0 });
+  const handlePasswordMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPwCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     });
   };
 
@@ -344,7 +352,7 @@ export default function AuthPage() {
         {/* ── Interactive parallax dot grid ── */}
         <motion.div
           animate={{ x: mousePos.x, y: mousePos.y }}
-          transition={{ type: 'easeOut', duration: 0.4 }}
+          transition={{ ease: 'easeOut', duration: 0.4 }}
           style={{
             position: 'absolute', inset: -30,
             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1.2px, transparent 1.2px)',
@@ -586,7 +594,7 @@ export default function AuthPage() {
         {/* Interactive parallax dot grid on form side */}
         <motion.div
           animate={{ x: -mousePos.x * 0.8, y: -mousePos.y * 0.8 }}
-          transition={{ type: 'easeOut', duration: 0.4 }}
+          transition={{ ease: 'easeOut', duration: 0.4 }}
           style={{
             position: 'absolute', inset: -30, zIndex: 0,
             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.035) 1.2px, transparent 1.2px)',
@@ -606,14 +614,15 @@ export default function AuthPage() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             style={{ width: '100%', maxWidth: 380, position: 'relative', zIndex: 1 }}
           >
-            {/* Glass card wrapper with 3D Rotation Tilt effect */}
+            {/* Glass card wrapper with 3D Rotation Tilt effect + Spotlight Glow */}
             <motion.div
+              onMouseMove={handleCardMouseMove}
               style={{
                 transformStyle: 'preserve-3d',
                 rotateX: mousePos.rotateX,
                 rotateY: mousePos.rotateY,
                 transformPerspective: 1000,
-                background: 'rgba(255,255,255,0.025)',
+                background: `radial-gradient(400px circle at ${cardCoords.x}px ${cardCoords.y}px, rgba(168,85,247,0.075), transparent 70%), rgba(255,255,255,0.025)`,
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 20,
                 padding: '32px 28px',
@@ -823,13 +832,15 @@ export default function AuthPage() {
                       )}
                     </div>
                     <motion.div
+                      onMouseMove={handlePasswordMouseMove}
+                      whileHover={{ borderColor: 'rgba(168,85,247,0.2)' }}
                       animate={focusedField === 'password'
                         ? { boxShadow: '0 0 0 3px rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.55)' }
                         : { boxShadow: '0 0 0 0px rgba(168,85,247,0)', borderColor: 'rgba(255,255,255,0.07)' }}
                       transition={{ duration: 0.2 }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 8,
-                        background: 'rgba(255,255,255,0.03)',
+                        background: `radial-gradient(120px circle at ${pwCoords.x}px ${pwCoords.y}px, rgba(168,85,247,0.12), transparent 70%), rgba(255,255,255,0.03)`,
                         border: '1px solid rgba(255,255,255,0.07)',
                         borderRadius: 9, padding: '10px 12px',
                       }}
@@ -976,6 +987,14 @@ interface RaycastInputProps {
 }
 
 function RaycastInput({ label, type, placeholder, value, onChange, focused, onFocus, onBlur, required, hint, suffix, prefixIcon, index }: RaycastInputProps) {
+  const [inputCoords, setInputCoords] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setInputCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
   return (
     <motion.div
       custom={index} variants={fieldVariants} initial="hidden" animate="show"
@@ -988,13 +1007,15 @@ function RaycastInput({ label, type, placeholder, value, onChange, focused, onFo
         {hint && <span style={{ opacity: 0.5 }}>{hint}</span>}
       </div>
       <motion.div
+        onMouseMove={handleMouseMove}
+        whileHover={{ borderColor: 'rgba(168,85,247,0.2)' }}
         animate={focused
           ? { boxShadow: '0 0 0 3px rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.55)' }
           : { boxShadow: '0 0 0 0px rgba(168,85,247,0)', borderColor: 'rgba(255,255,255,0.07)' }}
         transition={{ duration: 0.2 }}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          background: 'rgba(255,255,255,0.03)',
+          background: `radial-gradient(120px circle at ${inputCoords.x}px ${inputCoords.y}px, rgba(168,85,247,0.12), transparent 70%), rgba(255,255,255,0.03)`,
           border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: '9px', padding: '10px 12px',
         }}

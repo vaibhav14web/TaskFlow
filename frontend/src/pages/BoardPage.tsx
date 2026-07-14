@@ -41,16 +41,22 @@ const priorityBadge: Record<string, string> = {
 /* ── Keycap Badge ──────────────────────────────────── */
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 700,
-      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-      color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', lineHeight: 1.5,
-      boxShadow: '0 1px 0 rgba(255,255,255,0.05)',
-      userSelect: 'none', flexShrink: 0,
-    }}>
+    <motion.span
+      whileHover={{ y: -1, scale: 1.05, borderColor: 'rgba(168,85,247,0.3)', color: '#a855f7' }}
+      whileTap={{ scale: 0.95 }}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 700,
+        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+        color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', lineHeight: 1.5,
+        boxShadow: '0 1px 0 rgba(255,255,255,0.05)',
+        userSelect: 'none', flexShrink: 0,
+        cursor: 'pointer',
+        transition: 'color 0.2s, border-color 0.2s',
+      }}
+    >
       {children}
-    </span>
+    </motion.span>
   );
 }
 
@@ -63,12 +69,17 @@ function SortableTaskCard({ task, colIndex, onClick }: { task: Task; colIndex: n
   const rotateX = useTransform(my, [-50, 50], [10, -10]);
   const rotateY = useTransform(mx, [-50, 50], [-10, 10]);
 
+  const spotlightX = useMotionValue(0);
+  const spotlightY = useMotionValue(0);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - rect.left - rect.width / 2;
     const mouseY = e.clientY - rect.top - rect.height / 2;
     mx.set(mouseX);
     my.set(mouseY);
+    spotlightX.set(e.clientX - rect.left);
+    spotlightY.set(e.clientY - rect.top);
   };
 
   const handleMouseLeave = () => {
@@ -103,6 +114,9 @@ function SortableTaskCard({ task, colIndex, onClick }: { task: Task; colIndex: n
           background: 'rgba(255,255,255,0.025)',
           border: '1px solid rgba(255,255,255,0.06)',
           boxShadow: isDragging ? '0 20px 40px rgba(0,0,0,0.5)' : '0 4px 12px rgba(0,0,0,0.15)',
+          // Pass motion values to CSS variables directly
+          ['--spotlight-x' as any]: useTransform(spotlightX, (val) => `${val}px`),
+          ['--spotlight-y' as any]: useTransform(spotlightY, (val) => `${val}px`),
         }}
         whileHover={{ scale: 1.02, y: -2, borderColor: 'rgba(255,255,255,0.12)' }}
         whileTap={{ scale: 0.98 }}
@@ -115,10 +129,10 @@ function SortableTaskCard({ task, colIndex, onClick }: { task: Task; colIndex: n
           background: colGrads[colIndex % colGrads.length]
         }} />
 
-        {/* Glow spotlight background */}
+        {/* Glow spotlight background using CSS variables */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `radial-gradient(circle at center, ${getPriorityColor()}0d 0%, transparent 80%)`,
+          background: `radial-gradient(150px circle at var(--spotlight-x, 0px) var(--spotlight-y, 0px), ${getPriorityColor()}1e, transparent 70%)`,
           zIndex: 0
         }} />
 

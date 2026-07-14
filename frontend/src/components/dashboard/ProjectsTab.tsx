@@ -21,6 +21,142 @@ interface ProjectsTabProps {
   refetchProjects: () => void;
 }
 
+/* ── Dashboard Stat Card with Spotlight ──────────────── */
+function DashboardStatCard({ s, i }: { s: any; i: number }) {
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={handleMouseMove}
+      whileHover={{ y: -2, borderColor: 'rgba(255,255,255,0.12)' }}
+      style={{
+        background: `radial-gradient(180px circle at ${coords.x}px ${coords.y}px, rgba(255,255,255,0.04), transparent 70%), rgba(255,255,255,0.025)`,
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px', padding: '18px 20px',
+        display: 'flex', flexDirection: 'column', gap: '6px',
+        position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.2s',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+        background: s.accent, opacity: 0.7,
+      }} />
+      <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', color: '#f5f5f7' }}>
+        {s.value}
+      </div>
+      <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {s.label}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Project Grid Card with 3D Tilt Spotlight ───────── */
+interface ProjectCardProps {
+  p: any;
+  i: number;
+  navigate: any;
+  onDeleteClick: (e: React.MouseEvent) => void;
+}
+
+function ProjectCard({ p, i, navigate, onDeleteClick }: ProjectCardProps) {
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCoords({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ delay: i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      onClick={() => navigate(`/board/${p.id}`)}
+      onMouseMove={handleMouseMove}
+      style={{
+        background: `radial-gradient(220px circle at ${coords.x}px ${coords.y}px, rgba(168,85,247,0.06), transparent 70%), rgba(255,255,255,0.025)`,
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px', padding: '20px',
+        cursor: 'pointer', position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+      }}
+      whileHover={{
+        borderColor: 'rgba(168,85,247,0.25)',
+        boxShadow: '0 8px 32px rgba(168,85,247,0.08)',
+        y: -3,
+      }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+        background: gradients[i % gradients.length],
+      }} />
+
+      <button
+        onClick={onDeleteClick}
+        style={{
+          position: 'absolute', top: '14px', right: '14px',
+          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
+          borderRadius: '6px', padding: '5px', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#ef4444', opacity: 0, transition: 'opacity 0.2s',
+        }}
+        className="project-delete-btn"
+      >
+        <Trash2 size={12} />
+      </button>
+
+      <div style={{ marginBottom: '12px' }}>
+        <h3 style={{
+          fontSize: '14px', fontWeight: 700, color: '#f5f5f7',
+          letterSpacing: '-0.02em', marginBottom: '6px',
+          paddingRight: '28px',
+        }}>
+          {p.name}
+        </h3>
+        {p.description && (
+          <p style={{
+            fontSize: '12px', color: 'rgba(255,255,255,0.35)',
+            lineHeight: 1.5, display: '-webkit-box',
+            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>
+            {p.description}
+          </p>
+        )}
+      </div>
+
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{
+          width: '24px', height: '24px', borderRadius: '6px',
+          background: gradients[i % gradients.length], opacity: 0.8,
+        }} />
+        <span style={{
+          fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.4)',
+          display: 'flex', alignItems: 'center', gap: '4px',
+        }}>
+          Open board <ArrowRight size={11} />
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function ProjectsTab({ projects, currentWs, workspaces, refetchProjects }: ProjectsTabProps) {
   const navigate = useNavigate();
   const [showNewProject, setShowNewProject] = useState(false);
@@ -79,31 +215,7 @@ export default function ProjectsTab({ projects, currentWs, workspaces, refetchPr
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
         {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: '12px', padding: '18px 20px',
-              display: 'flex', flexDirection: 'column', gap: '6px',
-              position: 'relative', overflow: 'hidden',
-            }}
-          >
-            {/* Accent bar */}
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-              background: s.accent, opacity: 0.7,
-            }} />
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', color: '#f5f5f7' }}>
-              {s.value}
-            </div>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {s.label}
-            </div>
-          </motion.div>
+          <DashboardStatCard key={s.label} s={s} i={i} />
         ))}
       </div>
 
@@ -184,87 +296,18 @@ export default function ProjectsTab({ projects, currentWs, workspaces, refetchPr
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
         <AnimatePresence>
           {filtered.map((p: any, i: number) => (
-            <motion.div
+            <ProjectCard
               key={p.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ delay: i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => navigate(`/board/${p.id}`)}
-              style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '12px', padding: '20px',
-                cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+              p={p}
+              i={i}
+              navigate={navigate}
+              onDeleteClick={e => {
+                e.stopPropagation();
+                setDeleteProjId(p.id);
+                setDeleteProjName(p.name);
+                setShowDeleteModal(true);
               }}
-              whileHover={{
-                borderColor: 'rgba(255,255,255,0.12)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-              }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {/* Gradient accent bar */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-                background: gradients[i % gradients.length],
-              }} />
-
-              {/* Delete button */}
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  setDeleteProjId(p.id);
-                  setDeleteProjName(p.name);
-                  setShowDeleteModal(true);
-                }}
-                style={{
-                  position: 'absolute', top: '14px', right: '14px',
-                  background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
-                  borderRadius: '6px', padding: '5px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#ef4444', opacity: 0, transition: 'opacity 0.2s',
-                }}
-                className="project-delete-btn"
-              >
-                <Trash2 size={12} />
-              </button>
-
-              <div style={{ marginBottom: '12px' }}>
-                <h3 style={{
-                  fontSize: '14px', fontWeight: 700, color: '#f5f5f7',
-                  letterSpacing: '-0.02em', marginBottom: '6px',
-                  paddingRight: '28px',
-                }}>
-                  {p.name}
-                </h3>
-                {p.description && (
-                  <p style={{
-                    fontSize: '12px', color: 'rgba(255,255,255,0.35)',
-                    lineHeight: 1.5, display: '-webkit-box',
-                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                  }}>
-                    {p.description}
-                  </p>
-                )}
-              </div>
-
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)',
-              }}>
-                <div style={{
-                  width: '24px', height: '24px', borderRadius: '6px',
-                  background: gradients[i % gradients.length], opacity: 0.8,
-                }} />
-                <span style={{
-                  fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.4)',
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                }}>
-                  Open board <ArrowRight size={11} />
-                </span>
-              </div>
-            </motion.div>
+            />
           ))}
         </AnimatePresence>
 

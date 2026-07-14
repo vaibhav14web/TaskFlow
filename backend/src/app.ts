@@ -19,6 +19,7 @@ import attachmentRoutes from './routes/attachment.routes';
 import timeLogRoutes from './routes/time-log.routes';
 import { requireAuth } from './middleware/auth.middleware';
 import logger from './utils/logger';
+import { prisma } from './utils/prisma';
 
 const app = express();
 
@@ -60,6 +61,41 @@ app.use('/api/v1', timeLogRoutes);
 // Basic Health Check
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// In-memory cache variables for public stats
+let cachedStats: any = null;
+let cacheExpiry = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Public System Statistics (for Landing Page production wiring)
+app.get('/api/v1/public/stats', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const now = Date.now();
+    if (cachedStats && now < cacheExpiry) {
+      return res.status(200).json({ data: cachedStats });
+    }
+
+    const [usersCount, workspacesCount, projectsCount, tasksCount] = await Promise.all([
+      prisma.user.count(),
+      prisma.workspace.count(),
+      prisma.project.count(),
+      prisma.task.count()
+    ]);
+
+    cachedStats = {
+      users: usersCount,
+      workspaces: workspacesCount,
+      projects: projectsCount,
+      tasks: tasksCount,
+      uptimeSla: '99.99%'
+    };
+    cacheExpiry = now + CACHE_TTL_MS;
+
+    res.status(200).json({ data: cachedStats });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Centralized Error Handling Middleware
