@@ -32,7 +32,11 @@ api.interceptors.response.use(
           localStorage.setItem('token', access_token);
           localStorage.setItem('refreshToken', refresh_token);
           api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-          originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+          if (originalRequest.headers.set) {
+            originalRequest.headers.set('Authorization', `Bearer ${access_token}`);
+          } else {
+            originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+          }
           return api(originalRequest);
         } catch (refreshError) {
           localStorage.removeItem('token');

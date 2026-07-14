@@ -34,8 +34,24 @@ app.set('trust proxy', 1);
 
 // Security Middlewares
 app.use(helmet());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+if (config.server.corsOrigin) {
+  allowedOrigins.push(config.server.corsOrigin.replace(/\/$/, ''));
+}
+
 app.use(cors({
-  origin: config.server.corsOrigin,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    }
+  },
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   credentials: true
 }));
