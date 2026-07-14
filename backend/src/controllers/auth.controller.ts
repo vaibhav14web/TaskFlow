@@ -494,26 +494,24 @@ export const googleAuthRedirect = async (req: Request, res: Response, next: Next
 export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code, error: oauthError } = req.query;
+    const rawFrontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
 
     if (oauthError) {
-      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
       return;
     }
 
     if (!code || typeof code !== 'string') {
-      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Missing authorization code')}`);
       return;
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
     const redirectUri = getGoogleRedirectUri();
 
     if (!clientId || !clientSecret) {
-      const frontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Google OAuth not configured')}`);
       return;
     }
