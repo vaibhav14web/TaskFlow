@@ -282,7 +282,8 @@ export default function AuthPage() {
   };
 
   const handleGoogleSignInClick = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || ''}/api/v1/auth/oauth/google`;
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+    window.location.href = `${import.meta.env.VITE_API_URL || ''}/api/v1/auth/oauth/google?redirect=${encodeURIComponent(redirect)}`;
   };
 
   const heading = mode === 'login' ? 'Welcome back'

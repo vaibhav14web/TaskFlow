@@ -482,7 +482,9 @@ export const googleAuthRedirect = async (req: Request, res: Response, next: Next
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri = getGoogleRedirectUri();
     const scope = 'openid email profile';
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+    const redirect = req.query.redirect as string || '/';
+    const state = Buffer.from(JSON.stringify({ redirect })).toString('base64');
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
 
     res.redirect(authUrl);
   } catch (error) {
@@ -493,9 +495,19 @@ export const googleAuthRedirect = async (req: Request, res: Response, next: Next
 // 8c. Google OAuth Callback (Authorization Code Flow)
 export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { code, error: oauthError } = req.query;
+    const { code, error: oauthError, state } = req.query;
     const rawFrontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
     const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
+
+    let redirect = '/';
+    if (state && typeof state === 'string') {
+      try {
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+        redirect = stateData.redirect || '/';
+      } catch {
+        // ignore invalid state
+      }
+    }
 
     if (oauthError) {
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
@@ -588,8 +600,8 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
     const refreshToken = generateRefreshToken(user.id);
 
     // Redirect to frontend with tokens in URL fragment (secure)
-    const redirectUrl = `${frontendUrl}/auth/callback/google#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&user_id=${encodeURIComponent(user.id)}&user_name=${encodeURIComponent(user.name)}&user_email=${encodeURIComponent(user.email)}&user_avatar=${encodeURIComponent(user.avatarUrl || '')}`;
-    res.redirect(redirectUrl);
+    const callbackUrl = `${frontendUrl}/auth/callback/google?redirect=${encodeURIComponent(redirect)}#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&user_id=${encodeURIComponent(user.id)}&user_name=${encodeURIComponent(user.name)}&user_email=${encodeURIComponent(user.email)}&user_avatar=${encodeURIComponent(user.avatarUrl || '')}`;
+    res.redirect(callbackUrl);
   } catch (error) {
     next(error);
   }

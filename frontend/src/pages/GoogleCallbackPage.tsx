@@ -24,7 +24,7 @@ export default function GoogleCallbackPage() {
         const redirect = searchParams.get('redirect') || '/';
         
         window.location.hash = '';
-        window.location.href = redirect;
+        window.location.replace(redirect);
       } else {
         const searchParams = new URLSearchParams(window.location.search);
         const error = searchParams.get('error');
