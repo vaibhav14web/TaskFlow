@@ -207,6 +207,23 @@ export default function AuthPage() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const userId = params.get('user_id');
+
+    if (accessToken && refreshToken && userId && !user) {
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      window.location.hash = '';
+      toast.success('Logged in with Google! 🎉');
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      navigate(redirect, { replace: true });
+    }
+  }, [navigate, user]);
+
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showNewPw, setShowNewPw] = useState(false);

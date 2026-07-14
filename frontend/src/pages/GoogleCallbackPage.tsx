@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function GoogleCallbackPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const handleCallback = () => {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       
@@ -21,9 +20,13 @@ export default function GoogleCallbackPage() {
         
         toast.success('Logged in with Google! 🎉');
         
-        const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get('redirect') || '/';
+        
+        window.location.hash = '';
         window.location.href = redirect;
       } else {
+        const searchParams = new URLSearchParams(window.location.search);
         const error = searchParams.get('error');
         if (error) {
           toast.error(`Google OAuth failed: ${error}`);
@@ -35,7 +38,7 @@ export default function GoogleCallbackPage() {
     };
 
     handleCallback();
-  }, [navigate, searchParams]);
+  }, [navigate]);
 
   return (
     <div style={{
