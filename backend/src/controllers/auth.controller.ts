@@ -508,7 +508,7 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_ClIENT_SECRET;
     const redirectUri = getGoogleRedirectUri();
 
     if (!clientId || !clientSecret) {
