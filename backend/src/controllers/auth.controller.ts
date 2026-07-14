@@ -629,7 +629,9 @@ export const getAuthConfig = async (req: Request, res: Response, next: NextFunct
   try {
     res.status(200).json({
       data: {
-        googleClientId: process.env.GOOGLE_CLIENT_ID || null
+        googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+        googleClientSecretExists: Boolean(process.env.GOOGLE_CLIENT_SECRET),
+        googleRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || null
       }
     });
   } catch (error) {
