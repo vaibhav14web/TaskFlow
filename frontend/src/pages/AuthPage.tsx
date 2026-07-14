@@ -802,6 +802,7 @@ export default function AuthPage() {
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
                         required index={2}
+                        autoComplete="name"
                       />
                     </motion.div>
                   )}
@@ -817,6 +818,7 @@ export default function AuthPage() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     required index={3}
+                    autoComplete="username"
                   />
                 )}
 
@@ -863,6 +865,7 @@ export default function AuthPage() {
                         onFocus={() => setFocusedField('password')}
                         onBlur={() => setFocusedField(null)}
                         required minLength={8}
+                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                         style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#f5f5f7', fontSize: '14px', fontFamily: 'inherit' }}
                       />
                       <motion.button
@@ -993,9 +996,10 @@ interface RaycastInputProps {
   suffix?: React.ReactNode;
   prefixIcon?: React.ReactNode;
   index: number;
+  autoComplete?: string;
 }
 
-function RaycastInput({ label, type, placeholder, value, onChange, focused, onFocus, onBlur, required, hint, suffix, prefixIcon, index }: RaycastInputProps) {
+function RaycastInput({ label, type, placeholder, value, onChange, focused, onFocus, onBlur, required, hint, suffix, prefixIcon, index, autoComplete }: RaycastInputProps) {
   const [inputCoords, setInputCoords] = useState({ x: 0, y: 0 });
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -1039,6 +1043,7 @@ function RaycastInput({ label, type, placeholder, value, onChange, focused, onFo
         <input
           type={type} placeholder={placeholder} value={value}
           onChange={onChange} onFocus={onFocus} onBlur={onBlur} required={required}
+          autoComplete={autoComplete}
           style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#f5f5f7', fontSize: '14px', fontFamily: 'inherit' }}
         />
         {suffix && <span style={{ display: 'flex', alignItems: 'center' }}>{suffix}</span>}
