@@ -198,6 +198,15 @@ export default function AuthPage() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const errorMsg = new URLSearchParams(window.location.search).get('error');
+    if (errorMsg) {
+      toast.error(`Authentication error: ${errorMsg}`);
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '';
+      navigate('/auth' + (redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''), { replace: true });
+    }
+  }, [navigate]);
+
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showNewPw, setShowNewPw] = useState(false);
