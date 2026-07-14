@@ -533,7 +533,8 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
 
     if (!tokenResponse.ok) {
       console.error('Google token exchange failed:', tokenData);
-      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Failed to exchange authorization code')}`);
+      const errMsg = `Failed to exchange authorization code: ${tokenData.error_description || tokenData.error || 'Unknown error'}`;
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(errMsg)}`);
       return;
     }
 
