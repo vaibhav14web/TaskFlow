@@ -627,11 +627,13 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response, n
 // 10. Get Auth Config
 export const getAuthConfig = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const googleKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('GOOGLE'));
     res.status(200).json({
       data: {
         googleClientId: process.env.GOOGLE_CLIENT_ID || null,
         googleClientSecretExists: Boolean(process.env.GOOGLE_CLIENT_SECRET),
-        googleRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || null
+        googleRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || null,
+        detectedGoogleKeys: googleKeys
       }
     });
   } catch (error) {
