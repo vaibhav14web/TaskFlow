@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import BoardPage from './pages/BoardPage';
 import JoinPage from './pages/JoinPage';
 import PrototypeDemoPage from './pages/PrototypeDemoPage';
+import LandingPage from './pages/LandingPage';
 import './index.css';
 
 const qc = new QueryClient({
@@ -28,6 +29,16 @@ function Guard({ children }: { children: React.ReactElement }): React.ReactEleme
   return user ? children : <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
 }
 
+function LandingOrDashboard(): React.ReactElement {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
+      <div className="spinner" />
+    </div>
+  );
+  return user ? <DashboardPage /> : <LandingPage />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -35,7 +46,7 @@ function AppRoutes() {
       <Route path="/auth/callback/google" element={<GoogleCallbackPage />} />
       <Route path="/join" element={<Guard><JoinPage /></Guard>} />
       <Route path="/prototypes" element={<PrototypeDemoPage />} />
-      <Route path="/" element={<Guard><DashboardPage /></Guard>} />
+      <Route path="/" element={<LandingOrDashboard />} />
       <Route path="/board/:projectId" element={<Guard><BoardPage /></Guard>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

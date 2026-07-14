@@ -8,7 +8,7 @@ import logger from './utils/logger';
 
 const PORT = config.server.port;
 
-const requiredProductionEnvironment = ['DATABASE_URL', 'REDIS_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'FRONTEND_URL'];
+const requiredProductionEnvironment = ['DATABASE_URL', 'REDIS_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'FRONTEND_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'EMAIL_FROM'];
 if (process.env.NODE_ENV === 'production') {
   const missing = requiredProductionEnvironment.filter((name) => !process.env[name]);
   if (missing.length) throw new Error(`Missing required production environment variables: ${missing.join(', ')}`);

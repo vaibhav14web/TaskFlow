@@ -7,3 +7,15 @@ import { TextEncoder, TextDecoder } from 'util';
 
 globalThis.TextEncoder = TextEncoder;
 globalThis.TextDecoder = TextDecoder as typeof globalThis.TextDecoder;
+
+class MockIntersectionObserver {
+  observe = () => {};
+  unobserve = () => {};
+  disconnect = () => {};
+  takeRecords = () => [];
+  thresholds = [];
+  root = null;
+  rootMargin = '';
+}
+
+globalThis.IntersectionObserver = MockIntersectionObserver as any;

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   register,
+  resendVerificationEmail,
   verifyEmail,
   login,
   refresh,
@@ -21,6 +22,7 @@ import {
   loginRateLimiter,
   registerRateLimiter,
   verifyEmailRateLimiter,
+  resendVerificationRateLimiter,
   passwordResetRequestRateLimiter,
   passwordResetConfirmRateLimiter,
   oauthRateLimiter,
@@ -32,6 +34,7 @@ const router = Router();
 
 router.post('/register', registerRateLimiter, register);
 router.post('/verify-email', verifyEmailRateLimiter, verifyEmail);
+router.post('/resend-verification', resendVerificationRateLimiter, resendVerificationEmail);
 router.post('/login', loginRateLimiter, login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);

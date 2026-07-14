@@ -65,7 +65,13 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       }
     });
 
-    await sendVerificationEmail(email, verificationToken);
+    const delivered = await sendVerificationEmail(email, verificationToken);
+    if (!delivered) {
+      // Do not create an account that cannot be used because verification mail failed.
+      await prisma.user.delete({ where: { id: user.id } });
+      res.status(503).json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'We could not send a verification email. Please try again later.' } });
+      return;
+    }
 
     res.status(201).json({
       data: {
@@ -78,6 +84,33 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         }
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Resend a verification link without disclosing whether an account exists.
+export const resendVerificationEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string' || !isValidEmail(email)) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'A valid email address is required.' } });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user && !user.emailVerified) {
+      const verificationToken = crypto.randomBytes(config.auth.verificationTokenBytes).toString('hex');
+      await prisma.user.update({ where: { id: user.id }, data: { verificationToken } });
+
+      const delivered = await sendVerificationEmail(user.email, verificationToken);
+      if (!delivered) {
+        res.status(503).json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'We could not send a verification email. Please try again later.' } });
+        return;
+      }
+    }
+
+    res.status(200).json({ data: { message: 'If an unverified account exists for this email, a verification link has been sent.' } });
   } catch (error) {
     next(error);
   }
@@ -149,7 +182,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     // Check email verification
     if (!user.emailVerified) {
-      res.status(403).json({ error: { code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email address before logging in.' } });
+      res.status(403).json({ error: { code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email address before logging in.', resendAvailable: true } });
       return;
     }
 

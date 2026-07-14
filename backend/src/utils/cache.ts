@@ -1,25 +1,30 @@
-import Redis from 'ioredis';
 import logger from './logger';
 
-let client: Redis;
 const testCache = new Map<string, { value: string; expiresAt: number }>();
-const useTestCache = () => process.env.NODE_ENV === 'test' && !process.env.REDIS_URL;
+const useTestCache = () => process.env.NODE_ENV === 'test' && !process.env.UPSTASH_REDIS_REST_URL;
 
-const getClient = (): Redis => {
-  if (!client) {
-    const url = process.env.REDIS_URL || 'redis://localhost:6379';
-    client = new Redis(url, {
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-      retryStrategy(times) {
-        if (times > 3) return null;
-        return Math.min(times * 200, 2000);
-      }
-    });
-    client.on('error', (err) => logger.error({ err }, 'Redis connection error'));
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const upstashHeaders = () => ({
+  Authorization: `Bearer ${UPSTASH_TOKEN}`,
+  'Content-Type': 'application/json',
+});
+
+async function upstashFetch(path: string, options: RequestInit = {}) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+    throw new Error('Upstash Redis not configured');
   }
-  return client;
-};
+  const res = await fetch(`${UPSTASH_URL}${path}`, {
+    ...options,
+    headers: { ...upstashHeaders(), ...options.headers },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Upstash error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
 
 export const cache = {
   get: async <T>(key: string): Promise<T | null> => {
@@ -32,12 +37,11 @@ export const cache = {
       return JSON.parse(entry.value) as T;
     }
     try {
-      const redis = getClient();
-      const raw = await redis.get(key);
-      if (!raw) return null;
-      return JSON.parse(raw) as T;
+      const data = await upstashFetch(`/get/${encodeURIComponent(key)}`) as { result: string | null };
+      if (data.result === null) return null;
+      return JSON.parse(data.result) as T;
     } catch (err) {
-      logger.warn({ err }, 'Cache GET failed');
+      logger.warn({ err, key }, 'Cache GET failed');
       return null;
     }
   },
@@ -48,10 +52,10 @@ export const cache = {
       return;
     }
     try {
-      const redis = getClient();
-      await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+      const encodedValue = encodeURIComponent(JSON.stringify(value));
+      await upstashFetch(`/set/${encodeURIComponent(key)}/${encodedValue}/EX/${ttlSeconds}`, { method: 'POST' });
     } catch (err) {
-      logger.warn({ err }, 'Cache SET failed');
+      logger.warn({ err, key }, 'Cache SET failed');
     }
   },
 
@@ -61,10 +65,9 @@ export const cache = {
       return;
     }
     try {
-      const redis = getClient();
-      await redis.del(key);
+      await upstashFetch(`/del/${encodeURIComponent(key)}`, { method: 'DELETE' });
     } catch (err) {
-      logger.warn({ err }, 'Cache DEL failed');
+      logger.warn({ err, key }, 'Cache DEL failed');
     }
   },
 
@@ -74,8 +77,7 @@ export const cache = {
       return;
     }
     try {
-      const redis = getClient();
-      await redis.flushdb();
+      await upstashFetch('/flushdb', { method: 'POST' });
     } catch (err) {
       logger.warn({ err }, 'Cache CLEAR failed');
     }

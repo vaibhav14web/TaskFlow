@@ -12,9 +12,9 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@taskflow.com';
  * Sends a production-ready email using SMTP.
  * Falls back to console logging when SMTP is not configured (dev/test).
  */
-export const sendEmail = async (to: string, subject: string, html: string, text?: string) => {
+export const sendEmail = async (to: string, subject: string, html: string, text?: string): Promise<boolean> => {
   // In test mode, skip all email sending
-  if (process.env.NODE_ENV === 'test') return;
+  if (process.env.NODE_ENV === 'test') return true;
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     console.log(`\n==================================================`);
@@ -23,7 +23,7 @@ export const sendEmail = async (to: string, subject: string, html: string, text?
     console.log(`Subject: ${subject}`);
     console.log(`Body (Plain text):\n${text || html.replace(/<[^>]*>/g, '')}`);
     console.log(`==================================================\n`);
-    return;
+    return process.env.NODE_ENV !== 'production';
   }
 
   try {
@@ -46,22 +46,24 @@ export const sendEmail = async (to: string, subject: string, html: string, text?
       text: text || subject,
       html,
     });
+    return true;
   } catch (err) {
-    logger.error({ err, to, subject }, 'Email delivery failed; continuing without blocking auth flow');
+    logger.error({ err, to, subject }, 'Email delivery failed');
     console.log(`\n==================================================`);
     console.log(`[EMAIL LOG (Fallback - SMTP Send Failed)]`);
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(`Body (Plain text):\n${text || html.replace(/<[^>]*>/g, '')}`);
     console.log(`==================================================\n`);
+    return false;
   }
 };
 
 /** Send email verification link to a newly registered user */
-export const sendVerificationEmail = async (to: string, token: string) => {
+export const sendVerificationEmail = async (to: string, token: string): Promise<boolean> => {
   const frontendUrl = (config as any).server?.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
   const verifyUrl = `${frontendUrl}/auth?token=${token}`;
-  await sendEmail(
+  return sendEmail(
     to,
     'Verify your TaskFlow email',
     `<p>Click the link below to verify your email:</p>

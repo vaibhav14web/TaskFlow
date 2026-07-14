@@ -25,6 +25,7 @@ const config = {
     login:     { windowMs: 15 * 60 * 1000, max: 5  },
     register:  { windowMs: 60 * 60 * 1000, max: 10 },
     verifyEmail:          { windowMs: 15 * 60 * 1000, max: 10 },
+    resendVerification:   { windowMs: 60 * 60 * 1000, max: 3  },
     passwordResetRequest: { windowMs: 15 * 60 * 1000, max: 3  },
     passwordResetConfirm: { windowMs: 15 * 60 * 1000, max: 5  },
     oauth:                { windowMs: 15 * 60 * 1000, max: 10 },

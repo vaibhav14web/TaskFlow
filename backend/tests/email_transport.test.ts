@@ -26,6 +26,6 @@ describe('email transport fallback', () => {
 
     const { sendEmail } = await import('../src/utils/email');
 
-    await expect(sendEmail('user@example.com', 'Subject', '<p>hello</p>', 'hello')).resolves.toBeUndefined();
+    await expect(sendEmail('user@example.com', 'Subject', '<p>hello</p>', 'hello')).resolves.toBe(false);
   });
 });
