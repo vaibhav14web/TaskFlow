@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+import fs from 'fs';
 import config from './utils/config';
 import authRoutes from './routes/auth.routes';
 import workspaceRoutes from './routes/workspace.routes';
@@ -20,6 +21,12 @@ import { requireAuth } from './middleware/auth.middleware';
 import logger from './utils/logger';
 
 const app = express();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Trust proxy for correct client IP behind Render/Cloudflare
 app.set('trust proxy', 1);
