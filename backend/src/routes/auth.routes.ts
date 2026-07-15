@@ -11,6 +11,8 @@ import {
   googleLogin,
   googleAuthRedirect,
   googleAuthCallback,
+  githubAuthRedirect,
+  githubAuthCallback,
   getCurrentUser,
   getAuthConfig,
   setup2FA,
@@ -43,6 +45,8 @@ router.post('/password-reset/confirm', passwordResetConfirmRateLimiter, confirmP
 router.post('/oauth/google', oauthRateLimiter, googleLogin);
 router.get('/oauth/google', oauthRateLimiter, googleAuthRedirect);
 router.get('/oauth/google/callback', oauthRateLimiter, googleAuthCallback);
+router.get('/oauth/github', oauthRateLimiter, githubAuthRedirect);
+router.get('/oauth/github/callback', oauthRateLimiter, githubAuthCallback);
 router.get('/me', requireAuth, getCurrentUser);
 router.get('/config', getAuthConfig);
 

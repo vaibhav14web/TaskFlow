@@ -607,6 +607,142 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
   }
 };
 
+// 8d. GitHub OAuth Redirect
+export const githubAuthRedirect = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirect = req.query.redirect as string || '/';
+    const state = Buffer.from(JSON.stringify({ redirect })).toString('base64');
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=read:user%20user:email&state=${encodeURIComponent(state)}`;
+
+    res.redirect(authUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 8e. GitHub OAuth Callback
+export const githubAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code, error: oauthError, state } = req.query;
+    const rawFrontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
+    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
+
+    let redirect = '/';
+    if (state && typeof state === 'string') {
+      try {
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+        redirect = stateData.redirect || '/';
+      } catch {
+        // ignore invalid state
+      }
+    }
+
+    if (oauthError) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
+      return;
+    }
+
+    if (!code || typeof code !== 'string') {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Missing authorization code')}`);
+      return;
+    }
+
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('GitHub OAuth not configured')}`);
+      return;
+    }
+
+    // 1. Exchange authorization code for access token
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code
+      })
+    });
+
+    const tokenData = await tokenResponse.json() as { access_token?: string; error?: string; error_description?: string };
+
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      const errMsg = tokenData.error_description || tokenData.error || 'Failed to exchange authorization code';
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(errMsg)}`);
+      return;
+    }
+
+    // 2. Fetch user profile from GitHub
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `token ${tokenData.access_token}`,
+        'User-Agent': 'TaskFlow-Backend'
+      }
+    });
+
+    const userData = await userResponse.json() as { id: number; login: string; name?: string; email?: string; avatar_url?: string };
+
+    if (!userResponse.ok) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Failed to fetch user profile from GitHub')}`);
+      return;
+    }
+
+    // 3. Fetch user email if not public in profile
+    let email = userData.email;
+    if (!email) {
+      const emailsResponse = await fetch('https://api.github.com/user/emails', {
+        headers: {
+          'Authorization': `token ${tokenData.access_token}`,
+          'User-Agent': 'TaskFlow-Backend'
+        }
+      });
+      if (emailsResponse.ok) {
+        const emailsData = await emailsResponse.json() as { email: string; primary: boolean; verified: boolean }[];
+        const primaryEmail = emailsData.find(e => e.primary && e.verified) || emailsData.find(e => e.primary) || emailsData[0];
+        if (primaryEmail) {
+          email = primaryEmail.email;
+        }
+      }
+    }
+
+    if (!email) {
+      res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent('Email address not provided or verified by GitHub')}`);
+      return;
+    }
+
+    // 4. Find or create user in database
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      const dummyPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
+      user = await prisma.user.create({
+        data: {
+          name: userData.name || userData.login || email.split('@')[0],
+          email,
+          passwordHash: dummyPasswordHash,
+          avatarUrl: userData.avatar_url,
+          emailVerified: true
+        }
+      });
+    }
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Redirect to frontend callback route with tokens
+    const callbackUrl = `${frontendUrl}/auth/callback/github?redirect=${encodeURIComponent(redirect)}#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&user_id=${encodeURIComponent(user.id)}&user_name=${encodeURIComponent(user.name)}&user_email=${encodeURIComponent(user.email)}&user_avatar=${encodeURIComponent(user.avatarUrl || '')}`;
+    res.redirect(callbackUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // 9. Get Current User Profile
 export const getCurrentUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {

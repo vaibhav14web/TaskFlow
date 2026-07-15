@@ -1,83 +1,168 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api, { authApi } from '../api';
-import type { User } from '../api';
+import { apiRequest, setTokens, clearTokens, getUser, getAccessToken } from '../utils/api';
 
-interface AuthCtx {
-  user: User | null;
-  token: string | null;
-  login: (email: string, password: string) => Promise<any>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  loading: boolean;
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  twoFactorEnabled?: boolean;
 }
 
-const Ctx = createContext<AuthCtx>({} as AuthCtx);
-export const useAuth = () => useContext(Ctx);
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ twoFactorRequired: boolean; loginTicket?: string; user?: User }>;
+  verify2FALogin: (code: string, loginTicket: string) => Promise<User>;
+  logout: () => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  confirmPasswordReset: (token: string, password: string) => Promise<void>;
+  refreshUser: () => Promise<User | null>;
+}
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]   = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUserState] = useState<User | null>(getUser());
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      authApi.me()
-        .then((r: any) => setUser(r.data))
-        .catch(() => { localStorage.removeItem('token'); setToken(null); })
-        .finally(() => setLoading(false));
-    } else {
+  const refreshUser = async (): Promise<User | null> => {
+    if (!getAccessToken()) {
+      setUserState(null);
+      setLoading(false);
+      return null;
+    }
+    try {
+      // /auth/me returns data: user directly (not data: { user })
+      const user = await apiRequest<User>('/auth/me');
+      setUserState(user);
+      localStorage.setItem('taskflow_user', JSON.stringify(user));
+      return user;
+    } catch (err) {
+      clearTokens();
+      setUserState(null);
+      return null;
+    } finally {
       setLoading(false);
     }
-  }, [token]);
+  };
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const login = async (email: string, password: string) => {
-    const r: any = await authApi.login({ email, password });
-    if (r.data?.twoFactorRequired) {
-      return r.data;
+    try {
+      const res = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.twoFactorRequired) {
+        return { twoFactorRequired: true, loginTicket: res.loginTicket };
+      }
+
+      const { access_token, refresh_token, user: loggedUser } = res;
+      setTokens(access_token, refresh_token, loggedUser);
+      setUserState(loggedUser);
+      return { twoFactorRequired: false, user: loggedUser };
+    } catch (error) {
+      throw error;
     }
-    localStorage.setItem('token', r.data.access_token);
-    localStorage.setItem('refreshToken', r.data.refresh_token);
-    setToken(r.data.access_token);
-    setUser(r.data.user);
+  };
+
+  const verify2FALogin = async (code: string, loginTicket: string) => {
+    try {
+      const res = await apiRequest('/auth/2fa/login-verify', {
+        method: 'POST',
+        body: JSON.stringify({ code, loginTicket }),
+      });
+
+      const { access_token, refresh_token, user: loggedUser } = res;
+      setTokens(access_token, refresh_token, loggedUser);
+      setUserState(loggedUser);
+      return loggedUser;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const refresh_token = localStorage.getItem('taskflow_refresh_token');
+      if (refresh_token) {
+        await apiRequest('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token }),
+        }).catch(() => {});
+      }
+    } finally {
+      clearTokens();
+      setUserState(null);
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const r: any = await authApi.register({ name, email, password });
-
-    // In production, the backend does NOT return verificationToken in the response
-    // (only returned in dev/test mode for convenience). In production, user must
-    // verify their email manually before logging in.
-    if (r.data?.verificationToken) {
-      // Dev / test only: auto-verify email and auto-login so devs don't need
-      // to check their email every time they test registration.
-      await api.post('/auth/verify-email', { token: r.data.verificationToken });
-      const loginRes: any = await authApi.login({ email, password });
-      localStorage.setItem('token', loginRes.data.access_token);
-      localStorage.setItem('refreshToken', loginRes.data.refresh_token);
-      setToken(loginRes.data.access_token);
-      setUser(loginRes.data.user);
-    }
-    // In production: register() simply resolves. The caller (AuthPage) is
-    // responsible for showing the "check your email" message. No auto-login.
+    await apiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password }),
+    });
   };
 
-  const logout = () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    // Send refresh_token so backend can blacklist it too
-    authApi.logout().catch(() => {});
-    // Fire-and-forget: tell backend to revoke the refresh token
-    if (refreshToken) {
-      api.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
-    }
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    setToken(null);
-    setUser(null);
+  const resendVerification = async (email: string) => {
+    await apiRequest('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  };
+
+  const verifyEmail = async (token: string) => {
+    await apiRequest('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    await apiRequest('/auth/password-reset/request', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  };
+
+  const confirmPasswordReset = async (token: string, password: string) => {
+    await apiRequest('/auth/password-reset/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
   };
 
   return (
-    <Ctx.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      verify2FALogin,
+      logout, 
+      register, 
+      resendVerification,
+      verifyEmail,
+      requestPasswordReset,
+      confirmPasswordReset,
+      refreshUser 
+    }}>
       {children}
-    </Ctx.Provider>
+    </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
