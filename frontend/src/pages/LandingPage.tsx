@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, useScroll, useTransform, useMotionValue, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Zap, Users, BarChart2, Layers, CheckCircle, ArrowRight,
   Star, Shield, Clock, Sparkles, Globe, ChevronRight, DollarSign
@@ -240,7 +241,9 @@ function StatCard({ number, label, delay }: { number: string; label: string; del
 
 /* ── Navbar ────────────────────────────────────────── */
 interface NavbarProps {
+  user: any;
   onGetStarted: () => void;
+  onGoToDashboard: () => void;
   onScrollToFeatures: () => void;
   onScrollToPricing: () => void;
   onGoToBlog: () => void;
@@ -262,7 +265,7 @@ function NavLink({ onClick, children }: { onClick: () => void; children: React.R
   );
 }
 
-function Navbar({ onGetStarted, onScrollToFeatures, onScrollToPricing, onGoToBlog, onGoToDocs }: NavbarProps) {
+function Navbar({ user, onGetStarted, onGoToDashboard, onScrollToFeatures, onScrollToPricing, onGoToBlog, onGoToDocs }: NavbarProps) {
   return (
     <motion.nav
       initial={{ opacity: 0, y: -20 }}
@@ -302,33 +305,49 @@ function Navbar({ onGetStarted, onScrollToFeatures, onScrollToPricing, onGoToBlo
 
       {/* CTA */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={onGetStarted}
-          style={{
-            background: 'none', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 8, padding: '7px 16px', color: 'rgba(255,255,255,0.7)',
-            fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.25)';
-            (e.currentTarget as HTMLButtonElement).style.color = '#f5f5f7';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.12)';
-            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)';
-          }}
-        >Sign in</button>
-        <button
-          onClick={onGetStarted}
-          style={{
-            background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-            border: 'none', borderRadius: 8, padding: '7px 18px',
-            color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(168,85,247,0.35)', transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'}
-          onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
-        >Get Started</button>
+        {user ? (
+          <button
+            onClick={onGoToDashboard}
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+              border: 'none', borderRadius: 8, padding: '7px 18px',
+              color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(168,85,247,0.35)', transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
+          >Dashboard</button>
+        ) : (
+          <>
+            <button
+              onClick={onGetStarted}
+              style={{
+                background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8, padding: '7px 16px', color: 'rgba(255,255,255,0.7)',
+                fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.25)';
+                (e.currentTarget as HTMLButtonElement).style.color = '#f5f5f7';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.12)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)';
+              }}
+            >Sign in</button>
+            <button
+              onClick={onGetStarted}
+              style={{
+                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                border: 'none', borderRadius: 8, padding: '7px 18px',
+                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(168,85,247,0.35)', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'}
+              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
+            >Get Started</button>
+          </>
+        )}
       </div>
     </motion.nav>
   );
@@ -377,6 +396,7 @@ function Particle({ x, y, size, delay, duration, color = 'rgba(168,85,247,0.45)'
 /* ── MAIN LANDING PAGE ─────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef });
   const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -60]);
@@ -477,7 +497,9 @@ export default function LandingPage() {
       }}
     >
       <Navbar
+        user={user}
         onGetStarted={goToAuth}
+        onGoToDashboard={() => navigate('/dashboard')}
         onScrollToFeatures={scrollToFeatures}
         onScrollToPricing={scrollToPricing}
         onGoToBlog={goToBlog}
@@ -595,34 +617,53 @@ export default function LandingPage() {
               transition={{ delay: 0.45, duration: 0.6 }}
               style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}
             >
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.03, y: -2, boxShadow: '0 12px 35px rgba(168,85,247,0.5)' }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                  border: 'none', borderRadius: 10, padding: '12px 28px',
-                  color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  transition: 'box-shadow 0.2s',
-                }}
-              >
-                Start for free <ArrowRight size={15} />
-              </motion.button>
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.07)', color: '#f5f5f7' }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 10, padding: '12px 24px',
-                  color: 'rgba(255,255,255,0.7)', fontSize: '14px', fontWeight: 600,
-                  cursor: 'pointer', transition: 'all 0.2s',
-                }}
-              >
-                Watch demo
-              </motion.button>
+              {user ? (
+                <motion.button
+                  onClick={() => navigate('/dashboard')}
+                  whileHover={{ scale: 1.03, y: -2, boxShadow: '0 12px 35px rgba(168,85,247,0.5)' }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                    border: 'none', borderRadius: 10, padding: '12px 28px',
+                    color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    transition: 'box-shadow 0.2s',
+                  }}
+                >
+                  Go to Dashboard <ArrowRight size={15} />
+                </motion.button>
+              ) : (
+                <>
+                  <motion.button
+                    onClick={goToAuth}
+                    whileHover={{ scale: 1.03, y: -2, boxShadow: '0 12px 35px rgba(168,85,247,0.5)' }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                      border: 'none', borderRadius: 10, padding: '12px 28px',
+                      color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      transition: 'box-shadow 0.2s',
+                    }}
+                  >
+                    Start for free <ArrowRight size={15} />
+                  </motion.button>
+                  <motion.button
+                    onClick={goToAuth}
+                    whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.07)', color: '#f5f5f7' }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 10, padding: '12px 24px',
+                      color: 'rgba(255,255,255,0.7)', fontSize: '14px', fontWeight: 600,
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    Watch demo
+                  </motion.button>
+                </>
+              )}
             </motion.div>
 
             {/* Social proof */}

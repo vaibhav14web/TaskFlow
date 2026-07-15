@@ -176,7 +176,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user) {
-      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
       navigate(redirect);
     }
   }, [user, navigate]);

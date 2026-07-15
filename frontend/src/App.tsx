@@ -70,12 +70,6 @@ function Guard({ children }: { children: React.ReactElement }): React.ReactEleme
   return user ? children : <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
 }
 
-function LandingOrDashboard(): React.ReactElement {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  return user ? <DashboardPage /> : <LandingPage />;
-}
-
 function AnimatedRoute({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
@@ -104,7 +98,8 @@ function AppRoutes() {
         <Route path="/docs" element={<AnimatedRoute><DocsPage /></AnimatedRoute>} />
         <Route path="/docs/:section" element={<AnimatedRoute><DocsPage /></AnimatedRoute>} />
         <Route path="/pricing" element={<AnimatedRoute><PricingPage /></AnimatedRoute>} />
-        <Route path="/" element={<AnimatedRoute><LandingOrDashboard /></AnimatedRoute>} />
+        <Route path="/" element={<AnimatedRoute><LandingPage /></AnimatedRoute>} />
+        <Route path="/dashboard" element={<Guard><AnimatedRoute><DashboardPage /></AnimatedRoute></Guard>} />
         <Route path="/board/:projectId" element={<Guard><AnimatedRoute><BoardPage /></AnimatedRoute></Guard>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

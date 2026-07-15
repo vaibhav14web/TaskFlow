@@ -24,7 +24,7 @@ export default function GoogleCallbackPage() {
       toast.success('Logged in with Google! 🎉');
       
       const searchParams = new URLSearchParams(window.location.search);
-      const redirect = searchParams.get('redirect') || '/';
+      const redirect = searchParams.get('redirect') || '/dashboard';
       
       window.location.hash = '';
       window.location.replace(redirect);
