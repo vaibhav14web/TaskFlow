@@ -121,10 +121,10 @@ function ShimmerButton({
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, x: 20, filter: 'blur(4px)' },
+  hidden: { opacity: 0, x: 12, filter: 'blur(4px)' },
   show: (i: number) => ({
     opacity: 1, x: 0, filter: 'blur(0px)',
-    transition: { delay: 0.2 + i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }
+    transition: { delay: 0.1 + i * 0.05, duration: 0.28, ease: [0.23, 1, 0.32, 1] as any }
   })
 };
 
