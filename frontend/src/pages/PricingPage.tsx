@@ -166,7 +166,7 @@ function GlowOrb({ x, y, color, size = 500 }: { x: string; y: string; color: str
       style={{
         position: 'absolute', left: x, top: y, width: size, height: size,
         borderRadius: '50%', background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-        transform: 'translate(-50%, -50%)', pointerEvents: 'none', filter: 'blur(20px)',
+        transform: 'translate(-50%, -50%)', pointerEvents: 'none', filter: 'blur(120px)',
       }}
     />
   );

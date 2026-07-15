@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -75,22 +76,39 @@ function LandingOrDashboard(): React.ReactElement {
   return user ? <DashboardPage /> : <LandingPage />;
 }
 
-function AppRoutes() {
+function AnimatedRoute({ children }: { children: React.ReactNode }) {
   return (
-    <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/auth/callback/google" element={<GoogleCallbackPage />} />
-      <Route path="/join" element={<Guard><JoinPage /></Guard>} />
-      <Route path="/prototypes" element={<PrototypeDemoPage />} />
-      <Route path="/blog" element={<BlogPage />} />
-      <Route path="/blog/:slug" element={<BlogPage />} />
-      <Route path="/docs" element={<DocsPage />} />
-      <Route path="/docs/:section" element={<DocsPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/" element={<LandingOrDashboard />} />
-      <Route path="/board/:projectId" element={<Guard><BoardPage /></Guard>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <motion.div
+      initial={{ opacity: 0, y: 15, filter: 'blur(5px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, y: -15, filter: 'blur(5px)' }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/auth" element={<AnimatedRoute><AuthPage /></AnimatedRoute>} />
+        <Route path="/auth/callback/google" element={<AnimatedRoute><GoogleCallbackPage /></AnimatedRoute>} />
+        <Route path="/join" element={<Guard><AnimatedRoute><JoinPage /></AnimatedRoute></Guard>} />
+        <Route path="/prototypes" element={<AnimatedRoute><PrototypeDemoPage /></AnimatedRoute>} />
+        <Route path="/blog" element={<AnimatedRoute><BlogPage /></AnimatedRoute>} />
+        <Route path="/blog/:slug" element={<AnimatedRoute><BlogPage /></AnimatedRoute>} />
+        <Route path="/docs" element={<AnimatedRoute><DocsPage /></AnimatedRoute>} />
+        <Route path="/docs/:section" element={<AnimatedRoute><DocsPage /></AnimatedRoute>} />
+        <Route path="/pricing" element={<AnimatedRoute><PricingPage /></AnimatedRoute>} />
+        <Route path="/" element={<AnimatedRoute><LandingOrDashboard /></AnimatedRoute>} />
+        <Route path="/board/:projectId" element={<Guard><AnimatedRoute><BoardPage /></AnimatedRoute></Guard>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

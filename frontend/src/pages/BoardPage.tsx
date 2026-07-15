@@ -23,6 +23,40 @@ import {
   Calendar, Pencil, DollarSign, Printer, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+function FloatingParticle({ x, y, size, delay, duration, color = 'rgba(168,85,247,0.3)' }: {
+  x: number; y: number; size: number; delay: number; duration: number; color?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{
+        opacity: [0, 0.6, 0.8, 0.2, 0],
+        y: [0, -70, -140],
+        x: [0, size * 3, size * -3],
+        scale: [0.5, 1.2, 0.7],
+      }}
+      transition={{
+        delay,
+        duration,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+      style={{
+        position: 'absolute',
+        left: `${x}%`,
+        top: `${y}%`,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: color,
+        boxShadow: `0 0 ${size * 2.5}px ${color}`,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  );
+}
+
 const colGrads = [
   'linear-gradient(135deg,#3b82f6,#06b6d4)',
   'linear-gradient(135deg,#a855f7,#ec4899)',
@@ -807,12 +841,28 @@ export default function BoardPage() {
     );
   }
 
+  // Generate random particles for the board view
+  const boardParticles = Array.from({ length: 15 }).map((_, i) => ({
+    x: 5 + (i * 24) % 90,
+    y: 10 + (i * 19) % 80,
+    size: 2 + (i % 3),
+    delay: i * 0.45,
+    duration: 14 + (i % 4) * 3,
+  }));
+
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: '#07070a' }}>
       <div className="blobs">
-        <div className="blob blob-1" />
-        <div className="blob blob-2" />
-        <div className="blob blob-3" />
+        <div className="blob blob-1" style={{ opacity: 0.12 }} />
+        <div className="blob blob-2" style={{ opacity: 0.12 }} />
+        <div className="blob blob-3" style={{ opacity: 0.08 }} />
+      </div>
+
+      {/* Floating particles */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        {boardParticles.map((p, idx) => (
+          <FloatingParticle key={idx} x={p.x} y={p.y} size={p.size} delay={p.delay} duration={p.duration} />
+        ))}
       </div>
 
       {/* Topbar */}
