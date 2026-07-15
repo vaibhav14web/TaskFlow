@@ -31,13 +31,26 @@ export default function JoinPage() {
   }, [token, navigate]);
 
   return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div className="spinner" style={{ margin: '0 auto var(--space-lg)' }} />
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)', fontWeight: 500 }}>
+    <div style={{
+      height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#07070a', fontFamily: 'Inter, sans-serif', color: '#f5f5f7'
+    }}>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: '50%',
+          border: '3px solid rgba(255,255,255,0.05)', borderTopColor: '#a855f7',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13.5px', fontWeight: 500, margin: 0 }}>
           Joining workspace, please wait...
         </p>
       </div>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
