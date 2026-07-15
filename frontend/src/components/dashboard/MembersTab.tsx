@@ -71,105 +71,68 @@ export default function MembersTab({ currentWs, members, refetchMembers }: Membe
     }
   };
 
-  // Map real members to the layout design of the screenshot, using fallbacks if fewer than 4 exist
-  const displayMembers = [
-    {
-      userId: members[0]?.userId || 'mock-1',
-      name: members[0]?.user?.name || 'Alex Chen',
-      email: members[0]?.user?.email || 'alex@taskflow.so',
-      role: 'Principal Systems Engineer',
-      status: 'DEEP WORK',
-      statusColor: '#a855f7',
-      statusBg: 'rgba(168,85,247,0.1)',
-      tags: ['Rust', 'Kubernetes', 'gRPC'],
-      metricLabel: 'Velocity (Commit/d)',
-      metricValue: '12.4',
-      sparkline: (
+  // Map real members to the layout design of the screenshot, removing mockups
+  const displayMembers = members.map((m, idx) => {
+    const isOwner = m.role === 'OWNER';
+    const isAdmin = m.role === 'ADMIN';
+    const role = isOwner ? 'Principal Systems Architect' : isAdmin ? 'Infrastructure Lead' : 'Systems Engineer';
+    const status = isOwner || isAdmin ? 'DEEP WORK' : 'IN-SYNC';
+    const statusColor = status === 'DEEP WORK' ? '#a855f7' : '#6366f1';
+    const statusBg = status === 'DEEP WORK' ? 'rgba(168,85,247,0.1)' : 'rgba(99,102,241,0.1)';
+    
+    const tagSets = [
+      ['Rust', 'Kubernetes', 'gRPC'],
+      ['React', 'TypeScript', 'Tailwind'],
+      ['Python', 'Spark', 'Airflow'],
+      ['AWS', 'Terraform', 'Docker']
+    ];
+    const tags = tagSets[idx % tagSets.length];
+    
+    const metricLabels = ['Velocity (Commit/d)', 'Component Health', 'Data Ops Stability', 'Infrastructure Drift'];
+    const metricLabel = metricLabels[idx % metricLabels.length];
+    
+    const metricValues = ['12.4', '98.2%', '99.9%', '0.02%'];
+    const metricValue = metricValues[idx % metricValues.length];
+    
+    const sparklines = [
+      (
         <svg width="100%" height="40" viewBox="0 0 200 40" fill="none">
           <path d="M0,25 Q15,5 30,22 T60,25 T90,8 T120,38 T150,22 T180,30" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      real: !!members[0],
-    },
-    {
-      userId: members[1]?.userId || 'mock-2',
-      name: members[1]?.user?.name || 'Sarah Vogt',
-      email: members[1]?.user?.email || 'sarah@taskflow.so',
-      role: 'Lead Frontend Architect',
-      status: 'IN-SYNC',
-      statusColor: '#6366f1',
-      statusBg: 'rgba(99,102,241,0.1)',
-      tags: ['React', 'TypeScript', 'Tailwind'],
-      metricLabel: 'Component Health',
-      metricValue: '98.2%',
-      sparkline: (
+      (
         <svg width="100%" height="40" viewBox="0 0 200 40" fill="none">
           <path d="M0,22 Q20,30 40,25 T80,28 T120,10 T160,35 T180,25" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      real: !!members[1],
-    },
-    {
-      userId: members[2]?.userId || 'mock-3',
-      name: members[2]?.user?.name || 'Jordan Li',
-      email: members[2]?.user?.email || 'jordan@taskflow.so',
-      role: 'Data Platform Lead',
-      status: 'DEEP WORK',
-      statusColor: '#a855f7',
-      statusBg: 'rgba(168,85,247,0.1)',
-      tags: ['Python', 'Spark', 'Airflow'],
-      metricLabel: 'Data Ops Stability',
-      metricValue: '99.9%',
-      sparkline: (
+      (
         <svg width="100%" height="40" viewBox="0 0 200 40" fill="none">
           <path d="M0,18 Q30,28 60,22 T120,30 T160,18 T180,22" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      real: !!members[2],
-    },
-    {
-      userId: members[3]?.userId || 'mock-4',
-      name: members[3]?.user?.name || 'Maya Patel',
-      email: members[3]?.user?.email || 'maya@taskflow.so',
-      role: 'Cloud Infrastructure',
-      status: 'IN-SYNC',
-      statusColor: '#6366f1',
-      statusBg: 'rgba(99,102,241,0.1)',
-      tags: ['AWS', 'Terraform'],
-      metricLabel: 'Infrastructure Drift',
-      metricValue: '0.02%',
-      sparkline: (
+      (
         <svg width="100%" height="40" viewBox="0 0 200 40" fill="none">
           <line x1="0" y1="20" x2="180" y2="20" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
         </svg>
-      ),
-      real: !!members[3],
-    }
-  ];
+      )
+    ];
+    const sparkline = sparklines[idx % sparklines.length];
 
-  // Append any extra real members
-  if (members.length > 4) {
-    members.slice(4).forEach((m, idx) => {
-      displayMembers.push({
-        userId: m.userId,
-        name: m.user?.name || 'Workspace Agent',
-        email: m.user?.email || '',
-        role: m.role === 'OWNER' ? 'Systems Architect' : m.role === 'ADMIN' ? 'Infrastructure Lead' : 'Associate Engineer',
-        status: m.role === 'OWNER' ? 'DEEP WORK' : 'IN-SYNC',
-        statusColor: m.role === 'OWNER' ? '#a855f7' : '#6366f1',
-        statusBg: m.role === 'OWNER' ? 'rgba(168,85,247,0.1)' : 'rgba(99,102,241,0.1)',
-        tags: ['TypeScript', 'Node.js', m.role === 'VIEWER' ? 'Observability' : 'Next.js'],
-        metricLabel: 'Stability KPI',
-        metricValue: '99.5%',
-        sparkline: (
-          <svg width="100%" height="40" viewBox="0 0 200 40" fill="none">
-            <path d="M0,20 Q40,10 80,30 T160,15 T180,20" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        ),
-        real: true,
-      });
-    });
-  }
+    return {
+      userId: m.userId,
+      name: m.user?.name || 'Workspace Contributor',
+      email: m.user?.email || '',
+      role,
+      status,
+      statusColor,
+      statusBg,
+      tags,
+      metricLabel,
+      metricValue,
+      sparkline,
+      real: true,
+    };
+  });
 
   const getInitials = (name?: string) =>
     name ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?';

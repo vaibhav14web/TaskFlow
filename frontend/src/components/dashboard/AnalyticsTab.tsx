@@ -86,17 +86,16 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
   const workload: any[] = workloadRaw || [];
 
   const renderTrendChart = () => {
-    // Generate beautiful fallback dates if no API metrics yet
-    const dataPoints = trendData.length > 0 ? trendData : [
-      { date: '2026-07-09', completedCount: 2 },
-      { date: '2026-07-10', completedCount: 5 },
-      { date: '2026-07-11', completedCount: 3 },
-      { date: '2026-07-12', completedCount: 8 },
-      { date: '2026-07-13', completedCount: 6 },
-      { date: '2026-07-14', completedCount: 12 },
-      { date: '2026-07-15', completedCount: 14 }
-    ];
+    if (trendData.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '44px 0', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
+          <TrendingUp size={24} style={{ color: 'rgba(255,255,255,0.1)', marginBottom: '8px' }} />
+          <div>No completion trend metrics logged in the selected window.</div>
+        </div>
+      );
+    }
 
+    const dataPoints = trendData;
     const maxVal = Math.max(...dataPoints.map((d: any) => d.completedCount), 1);
     const width = 600;
     const height = 180;
@@ -441,36 +440,10 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
                   );
                 })
               ) : (
-                // Beautiful fallback cards matching the design style
-                [
-                  { name: 'Alex Chen', active: 3, completed: 8, pct: 72 },
-                  { name: 'Sarah Vogt', active: 1, completed: 12, pct: 92 },
-                  { name: 'Jordan Li', active: 4, completed: 6, pct: 60 }
-                ].map((w, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)',
-                      borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#f5f5f7' }}>{w.name}</span>
-                      <span style={{ fontSize: '10px', color: '#10b981', fontFamily: 'monospace', fontWeight: 'bold' }}>{w.pct}%</span>
-                    </div>
-                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: '99px', position: 'relative', overflow: 'hidden' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${w.pct}%` }}
-                        transition={{ duration: 0.6, delay: i * 0.05 }}
-                        style={{ height: '100%', background: '#6366f1', borderRadius: '99px' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
-                      {w.active} ACTIVE / {w.completed} COMPLETED
-                    </div>
-                  </div>
-                ))
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.3)' }}>
+                  <Users size={20} style={{ color: 'rgba(255,255,255,0.1)', marginBottom: '8px' }} />
+                  <div style={{ fontSize: '12px' }}>No active workload data available.</div>
+                </div>
               )}
             </div>
           </motion.div>
