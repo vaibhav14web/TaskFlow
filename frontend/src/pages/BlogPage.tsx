@@ -59,25 +59,25 @@ const AUTHORS: Record<string, Author> = {
   sarah: {
     name: 'Sarah Lin',
     role: 'Head of Product',
-    avatar: '👩‍💼',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     bio: 'Sarah leads product strategy at TaskFlow. Previously at Figma and Notion, she obsesses over how teams coordinate work.',
   },
   david: {
     name: 'David Kowalski',
     role: 'Security Architect',
-    avatar: '🛡️',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     bio: 'David designs TaskFlow\'s security infrastructure. Former lead security engineer at Cloudflare with 12 years in application security.',
   },
   elena: {
     name: 'Elena Rostova',
     role: 'Senior Integration Engineer',
-    avatar: '⚙️',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     bio: 'Elena builds developer tooling and API integrations at TaskFlow. She has contributed to dozens of open-source developer tools.',
   },
   marcus: {
     name: 'Marcus Chen',
     role: 'Engineering Manager',
-    avatar: '🧑‍💻',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     bio: 'Marcus leads the core platform team at TaskFlow. Ex-Linear and Stripe, he is passionate about developer experience and team velocity.',
   },
 };
@@ -1303,8 +1303,12 @@ function BlogIndex() {
                     {post.summary}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>
-                      {post.author.avatar}
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0, overflow: 'hidden' }}>
+                      {post.author.avatar.startsWith('http') ? (
+                        <img src={post.author.avatar} alt={post.author.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        post.author.avatar
+                      )}
                     </div>
                     <div>
                       <div style={{ fontSize: '11px', fontWeight: 600, color: '#f5f5f7' }}>{post.author.name}</div>
@@ -1433,8 +1437,12 @@ function BlogPostView({ slug }: { slug: string }) {
 
             {/* Author */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, marginBottom: 40 }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
-                {post.author.avatar}
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, overflow: 'hidden' }}>
+                {post.author.avatar.startsWith('http') ? (
+                  <img src={post.author.avatar} alt={post.author.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  post.author.avatar
+                )}
               </div>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#f5f5f7', marginBottom: 2 }}>{post.author.name}</div>
