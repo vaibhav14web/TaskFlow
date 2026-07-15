@@ -1,1132 +1,499 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { motion, useScroll, useTransform, useMotionValue, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Zap, Users, BarChart2, Layers, CheckCircle, ArrowRight,
-  Star, Shield, Clock, Sparkles, Globe, ChevronRight, DollarSign
+  Zap, Shield, Globe, Terminal, ArrowRight, Search, Activity, Cpu, Sparkles
 } from 'lucide-react';
 
-/* ── Floating Glass Card ──────────────────────────── */
-function GlassCard({
-  children,
-  style = {},
-  delay = 0,
-  className = '',
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-  delay?: number;
-  className?: string;
-}) {
-  const spotlightX = useMotionValue(0);
-  const spotlightY = useMotionValue(0);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    spotlightX.set(e.clientX - rect.left);
-    spotlightY.set(e.clientY - rect.top);
-  };
+/* ── Interactive Command Bar Mockup ────────────────── */
+function CommandBarMockup() {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const items = [
+    { label: 'Jump to Projects', key: 'P', icon: '📂' },
+    { label: 'Workspace Settings', key: 'S', icon: '⚙️' },
+    { label: 'Profile & Identity', key: 'I', icon: '👤' },
+    { label: 'View Insights', key: 'N', icon: '📈' },
+  ];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      onMouseMove={handleMouseMove}
-      whileHover={{ y: -5, boxShadow: '0 12px 40px rgba(168,85,247,0.15), inset 0 1px 0 rgba(255,255,255,0.12)' }}
+      transition={{ delay: 0.45, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        background: 'radial-gradient(400px circle at var(--spotlight-x, 0px) var(--spotlight-y, 0px), rgba(168,85,247,0.07), transparent 70%), rgba(255,255,255,0.035)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 20,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-        transition: 'box-shadow 0.3s, border-color 0.3s',
-        ['--spotlight-x' as any]: useTransform(spotlightX, (val) => `${val}px`),
-        ['--spotlight-y' as any]: useTransform(spotlightY, (val) => `${val}px`),
-        ...style,
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/* ── Animated radial glow orb ─────────────────────── */
-function GlowOrb({ initialX, initialY, color, size = 600, duration = 8, delay = 0 }: {
-  initialX: string; initialY: string; color: string; size?: number; duration?: number; delay?: number;
-}) {
-  return (
-    <motion.div
-      animate={{
-        x: [0, 40, -30, 0],
-        y: [0, -30, 40, 0],
-        scale: [1, 1.15, 0.9, 1],
-      }}
-      transition={{
-        duration,
-        repeat: Infinity,
-        ease: 'easeInOut',
-        delay,
-      }}
-      style={{
-        position: 'absolute',
-        left: initialX,
-        top: initialY,
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-        filter: 'blur(30px)',
-      }}
-    />
-  );
-}
-
-/* ── Floating task card mockup ─────────────────────── */
-function FloatingTaskCard({ title, tag, tag2, avatar, progress, delay }: {
-  title: string; tag: string; tag2?: string; avatar: string; progress: number; delay: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ x: 6, scale: 1.01 }}
-      style={{
-        background: 'rgba(255,255,255,0.045)',
+        maxWidth: '540px', width: '100%', margin: '40px auto 0',
+        background: 'rgba(11, 11, 14, 0.7)',
         backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 14,
-        padding: '14px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        borderRadius: '16px', padding: '16px',
+        boxShadow: '0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.01)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: '13px', fontWeight: 600, color: '#f5f5f7', lineHeight: 1.4 }}>{title}</div>
-        <div style={{ fontSize: '20px', marginLeft: 8 }}>{avatar}</div>
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{
-          fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-          background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.25)'
-        }}>{tag}</span>
-        {tag2 && (
-          <span style={{
-            fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-            background: 'rgba(99,102,241,0.18)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)'
-          }}>{tag2}</span>
-        )}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
-          <span>Progress</span>
-          <span>{progress}%</span>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        background: 'rgba(255,255,255,0.015)',
+        border: '1px solid rgba(255,255,255,0.04)',
+        borderRadius: '10px', padding: '10px 14px', marginBottom: '14px'
+      }}>
+        <Search size={14} style={{ color: 'rgba(255,255,255,0.3)' }} />
+        <input
+          readOnly
+          value=""
+          placeholder="Search tasks, teams, or documents..."
+          style={{
+            background: 'none', border: 'none', outline: 'none',
+            color: '#f5f5f7', fontSize: '13px', fontFamily: 'inherit', flex: 1
+          }}
+        />
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>⌘</span>
+          <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>K</span>
         </div>
-        <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden' }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ delay: delay + 0.4, duration: 0.9, ease: 'easeOut' }}
-            style={{ height: '100%', background: 'linear-gradient(90deg, #a855f7, #6366f1)', borderRadius: 99 }}
-          />
-        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {items.map((item, idx) => {
+          const active = selectedIdx === idx;
+          return (
+            <div
+              key={idx}
+              onMouseEnter={() => setSelectedIdx(idx)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
+                background: active ? 'rgba(255,255,255,0.03)' : 'transparent',
+                border: active ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
+                transition: 'all 0.15s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '14px', width: '18px' }}>{item.icon}</span>
+                <span style={{ fontSize: '12.5px', fontWeight: 500, color: active ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                  {item.label}
+                </span>
+              </div>
+              <span style={{
+                fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px',
+                background: active ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.04)',
+                border: active ? '1px solid rgba(168,85,247,0.2)' : '1px solid rgba(255,255,255,0.06)',
+                color: active ? '#a855f7' : 'rgba(255,255,255,0.25)', fontFamily: 'monospace'
+              }}>{item.key}</span>
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
 }
 
-/* ── Feature card ─────────────────────────────────── */
-function FeatureCard({ icon: Icon, title, desc, gradient, delay }: {
-  icon: React.ElementType; title: string; desc: string; gradient: string; delay: number;
-}) {
-  const spotlightX = useMotionValue(0);
-  const spotlightY = useMotionValue(0);
+/* ── Sci-Fi Feature Card ──────────────────────────── */
+interface FeatureCardProps {
+  title: string;
+  desc: string;
+  metricLabel1: string;
+  metricValue1: string;
+  metricLabel2: string;
+  metricValue2: string;
+  icon: any;
+  accent: string;
+  bgGlow: string;
+  delay: number;
+}
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    spotlightX.set(e.clientX - rect.left);
-    spotlightY.set(e.clientY - rect.top);
-  };
+function FeatureCard({ title, desc, metricLabel1, metricValue1, metricLabel2, metricValue2, icon: Icon, accent, bgGlow, delay }: FeatureCardProps) {
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-      onMouseMove={handleMouseMove}
-      whileHover={{
-        y: -6,
-        borderColor: 'rgba(168,85,247,0.3)',
-        boxShadow: '0 12px 40px rgba(168,85,247,0.15), inset 0 1px 0 rgba(255,255,255,0.12)',
-      }}
-      style={{
-        background: 'radial-gradient(300px circle at var(--spotlight-x, 0px) var(--spotlight-y, 0px), rgba(99,102,241,0.08), transparent 75%), rgba(255,255,255,0.025)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 18,
-        padding: '28px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        cursor: 'pointer',
-        transition: 'border-color 0.25s, box-shadow 0.25s, transform 0.25s',
-        position: 'relative',
-        overflow: 'hidden',
-        ['--spotlight-x' as any]: useTransform(spotlightX, (val) => `${val}px`),
-        ['--spotlight-y' as any]: useTransform(spotlightY, (val) => `${val}px`),
-      }}
-    >
-      {/* top gradient line */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-        background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)'
-      }} />
-      <div style={{
-        width: 44, height: 44, borderRadius: 12,
-        background: gradient,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-      }}>
-        <Icon size={20} color="white" />
-      </div>
-      <div>
-        <div style={{ fontSize: '15px', fontWeight: 700, color: '#f5f5f7', marginBottom: 6 }}>{title}</div>
-        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>{desc}</div>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ── Stat card ─────────────────────────────────────── */
-function StatCard({ number, label, delay }: { number: string; label: string; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
-      transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ scale: 1.03, borderColor: 'rgba(99,102,241,0.2)' }}
+      transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={e => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setCoords({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.1)' }}
       style={{
-        background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 16,
-        padding: '24px 20px',
-        textAlign: 'center',
-        transition: 'all 0.2s',
+        background: `radial-gradient(180px circle at ${coords.x}px ${coords.y}px, rgba(255,255,255,0.025), transparent 75%), rgba(255,255,255,0.015)`,
+        border: '1px solid rgba(255,255,255,0.05)',
+        borderRadius: '16px', padding: '24px',
+        display: 'flex', flexDirection: 'column', gap: '16px',
+        position: 'relative', overflow: 'hidden', transition: 'border-color 0.2s',
       }}
     >
+      {/* Accent bar */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: accent }} />
+
+      {/* Glow effect */}
       <div style={{
-        fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.04em',
-        background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        marginBottom: 4,
-      }}>{number}</div>
-      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{label}</div>
-    </motion.div>
-  );
-}
+        position: 'absolute', top: -30, right: -30, width: 80, height: 80,
+        borderRadius: '50%', background: bgGlow, filter: 'blur(30px)', pointerEvents: 'none',
+      }} />
 
-/* ── Navbar ────────────────────────────────────────── */
-interface NavbarProps {
-  user: any;
-  onGetStarted: () => void;
-  onGoToDashboard: () => void;
-  onScrollToFeatures: () => void;
-  onScrollToPricing: () => void;
-  onGoToBlog: () => void;
-  onGoToDocs: () => void;
-}
-
-function NavLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <motion.span
-      onClick={onClick}
-      whileHover={{ color: '#f5f5f7' }}
-      style={{
-        fontSize: '13px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500,
-        transition: 'color 0.15s',
-      }}
-    >
-      {children}
-    </motion.span>
-  );
-}
-
-function Navbar({ user, onGetStarted, onGoToDashboard, onScrollToFeatures, onScrollToPricing, onGoToBlog, onGoToDocs }: NavbarProps) {
-  return (
-    <motion.nav
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        padding: '0 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: 64,
-        background: 'rgba(11,11,14,0.8)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{
-          width: 32, height: 32, borderRadius: 9,
-          background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+          width: '32px', height: '32px', borderRadius: '8px',
+          background: bgGlow.replace('0.2', '0.12').replace('0.15', '0.12'),
+          border: `1px solid ${bgGlow.replace('0.2', '0.25').replace('0.15', '0.25')}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Zap size={16} color="white" />
+          <Icon size={14} style={{ color: accent }} />
         </div>
-        <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#f5f5f7' }}>
-          Task<span style={{ color: '#a855f7' }}>Flow</span>
+        <span style={{ fontSize: '8px', fontWeight: 800, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          VERIFIED
         </span>
       </div>
 
-      {/* Nav links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        <NavLink onClick={onScrollToFeatures}>Features</NavLink>
-        <NavLink onClick={onScrollToPricing}>Pricing</NavLink>
-        <NavLink onClick={onGoToBlog}>Blog</NavLink>
-        <NavLink onClick={onGoToDocs}>Docs</NavLink>
+      <div>
+        <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f5f5f7', margin: '0 0 6px 0' }}>{title}</h4>
+        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5, margin: 0 }}>{desc}</p>
       </div>
 
-      {/* CTA */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {user ? (
-          <button
-            onClick={onGoToDashboard}
-            style={{
-              background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-              border: 'none', borderRadius: 8, padding: '7px 18px',
-              color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(168,85,247,0.35)', transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
-          >Dashboard</button>
-        ) : (
-          <>
-            <button
-              onClick={onGetStarted}
-              style={{
-                background: 'none', border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 8, padding: '7px 16px', color: 'rgba(255,255,255,0.7)',
-                fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.25)';
-                (e.currentTarget as HTMLButtonElement).style.color = '#f5f5f7';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.12)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)';
-              }}
-            >Sign in</button>
-            <button
-              onClick={onGetStarted}
-              style={{
-                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                border: 'none', borderRadius: 8, padding: '7px 18px',
-                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(168,85,247,0.35)', transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'}
-              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
-            >Get Started</button>
-          </>
-        )}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px', marginTop: '4px',
+        fontSize: '9.5px', fontFamily: 'monospace', fontWeight: 'bold'
+      }}>
+        <div style={{ display: 'flex', gap: '5px', color: 'rgba(255,255,255,0.3)' }}>
+          <span>{metricLabel1}:</span>
+          <span style={{ color: accent }}>{metricValue1}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '5px', color: 'rgba(255,255,255,0.3)' }}>
+          <span>{metricLabel2}:</span>
+          <span style={{ color: '#f5f5f7' }}>{metricValue2}</span>
+        </div>
       </div>
-    </motion.nav>
+    </motion.div>
   );
 }
 
-/* ── Cyber floating network node lines ──────────────── */
-function GridLineNetwork() {
-  return null;
-}
-
-/* ── Floating Cyber Particle ────────────────────────── */
-function Particle({ x, y, size, delay, duration, color = 'rgba(168,85,247,0.45)' }: {
-  x: number; y: number; size: number; delay: number; duration: number; color?: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{
-        opacity: [0, 0.6, 0.8, 0.3, 0],
-        y: [0, -80, -160, -240],
-        x: [0, size * 6, size * -5, size * 7],
-        scale: [0.5, 1.3, 0.9, 0.5],
-      }}
-      transition={{
-        delay,
-        duration,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
-      style={{
-        position: 'absolute',
-        left: `${x}%`,
-        top: `${y}%`,
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: color,
-        boxShadow: `0 0 ${size * 3}px ${color}`,
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}
-    />
-  );
-}
-
-/* ── MAIN LANDING PAGE ─────────────────────────────── */
+/* ── Main Landing Page ─────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: containerRef });
-  const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -60]);
-
-  // Mouse Parallax coordinates for grid Tilt
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { clientX, clientY } = e;
-    setMousePos({
-      x: (clientX - window.innerWidth / 2) / 35,
-      y: (clientY - window.innerHeight / 2) / 35,
-    });
-  };
-
-  // Generate background particles once
-  const particles = useMemo(() => Array.from({ length: 25 }).map((_, i) => ({
-    id: i,
-    x: 5 + (i * 27.3) % 90,
-    y: 10 + (i * 35.7) % 80,
-    size: 2 + (i % 4),
-    delay: (i * 0.3) % 5,
-    duration: 6 + (i % 5),
-    color: i % 2 === 0 ? 'rgba(168,85,247,0.35)' : 'rgba(99,102,241,0.35)',
-  })), []);
-
-  const [statsData, setStatsData] = useState({
-    users: 0,
-    workspaces: 0,
-    projects: 0,
-    tasks: 0,
-    apiLatency: 0,
-    uptimeSla: '99.99%',
-  });
-
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const pricingRef = useRef<HTMLDivElement>(null);
-
-  const scrollToFeatures = () => featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
-  const scrollToPricing = () => pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
-  const goToPricing = () => navigate('/pricing');
-  const goToBlog = () => navigate('/blog');
-  const goToDocs = () => navigate('/docs');
-
-  useEffect(() => {
-    const startTime = performance.now();
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    fetch(`${apiUrl}/api/v1/public/stats`)
-      .then(r => r.json())
-      .then(res => {
-        const endTime = performance.now();
-        if (res?.data) {
-          setStatsData({
-            users: res.data.users,
-            workspaces: res.data.workspaces,
-            projects: res.data.projects,
-            tasks: res.data.tasks,
-            apiLatency: Math.round(endTime - startTime),
-            uptimeSla: res.data.uptimeSla || '99.99%',
-          });
-        }
-      })
-      .catch(() => {
-        setStatsData({
-          users: 24,
-          workspaces: 8,
-          projects: 14,
-          tasks: 125,
-          apiLatency: Math.round(performance.now() - startTime),
-          uptimeSla: '99.99%',
-        });
-      });
-  }, []);
-
-  const goToAuth = () => navigate('/auth');
-
-  const features = [
-    { icon: Layers, title: 'Kanban Boards', desc: 'Drag-and-drop task management with real-time sync across your entire team.', gradient: 'linear-gradient(135deg, #a855f7, #7c3aed)', delay: 0 },
-    { icon: Users, title: 'Team Workspaces', desc: 'Create collaborative spaces with role-based permissions and invite management.', gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)', delay: 0.1 },
-    { icon: BarChart2, title: 'Analytics', desc: 'Track velocity, completion rates and team performance with beautiful dashboards.', gradient: 'linear-gradient(135deg, #0ea5e9, #6366f1)', delay: 0.2 },
-    { icon: Zap, title: 'Automations', desc: 'Set triggers and actions to automate repetitive workflows without any code.', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', delay: 0.3 },
-    { icon: Shield, title: 'Enterprise Security', desc: '2FA, JWT rotation, rate limiting and end-to-end encryption built in.', gradient: 'linear-gradient(135deg, #22c55e, #16a34a)', delay: 0.4 },
-    { icon: Clock, title: 'Time Tracking', desc: 'Log time per task, view individual reports and export for billing.', gradient: 'linear-gradient(135deg, #ec4899, #a855f7)', delay: 0.5 },
-  ];
+  const [email, setEmail] = useState('');
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
 
   return (
     <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
+      onMouseMove={e => setCoords({ x: e.clientX, y: e.clientY })}
       style={{
-        minHeight: '100vh',
-        background: '#0b0b0e',
-        fontFamily: "'Inter', -apple-system, sans-serif",
-        color: '#f5f5f7',
-        overflowX: 'hidden',
-        position: 'relative',
+        minHeight: '100vh', background: '#07070a',
+        color: '#f5f5f7', fontFamily: 'Inter, sans-serif',
+        overflowX: 'hidden', position: 'relative'
       }}
     >
-      <Navbar
-        user={user}
-        onGetStarted={goToAuth}
-        onGoToDashboard={() => navigate('/dashboard')}
-        onScrollToFeatures={scrollToFeatures}
-        onScrollToPricing={scrollToPricing}
-        onGoToBlog={goToBlog}
-        onGoToDocs={goToDocs}
-      />
+      {/* Background radial highlight follow */}
+      <div style={{
+        position: 'fixed', left: coords.x - 400, top: coords.y - 400,
+        width: 800, height: 800, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(168,85,247,0.015) 0%, transparent 80%)',
+        pointerEvents: 'none', zIndex: 0
+      }} />
 
-      {/* ── HERO SECTION ─────────────────────────────── */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-        
-        {/* Animated Floating Glow orbs */}
-        <GlowOrb initialX="15%" initialY="35%" color="#a855f7" size={650} duration={12} delay={0} />
-        <GlowOrb initialX="85%" initialY="45%" color="#6366f1" size={550} duration={14} delay={2} />
-        <GlowOrb initialX="50%" initialY="80%" color="#3b82f6" size={500} duration={16} delay={4} />
+      {/* Decorative center ambient orb */}
+      <div style={{
+        position: 'absolute', top: '25%', left: '50%', transform: 'translate(-50%, -50%)',
+        width: '500px', height: '500px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(99,102,241,0.035) 0%, transparent 80%)',
+        filter: 'blur(50px)', pointerEvents: 'none', zIndex: 0
+      }} />
 
-        {/* Scanning Grid Laser lines */}
-        <GridLineNetwork />
+      {/* ── NAVBAR ────────────────────────────────────────── */}
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, height: '64px',
+        background: 'rgba(7, 7, 10, 0.7)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 24px', zIndex: 100
+      }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '8px',
+            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Zap size={14} color="#fff" />
+          </div>
+          <span style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.04em' }}>
+            Task<span style={{ color: '#a855f7' }}>Flow</span>
+          </span>
+        </div>
 
-        {/* Floating particles */}
-        {particles.map(p => (
-          <Particle key={p.id} {...p} />
-        ))}
+        {/* Links */}
+        <div style={{ display: 'flex', gap: '24px', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.45)' }}>
+          <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={() => navigate('/pricing')} className="nav-link-hover">Pricing</span>
+          <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={() => navigate('/blog')} className="nav-link-hover">Blog</span>
+          <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={() => navigate('/docs')} className="nav-link-hover">Docs</span>
+        </div>
 
-        {/* Interactive parallax dot grid */}
-        <motion.div
-          animate={{ x: mousePos.x, y: mousePos.y }}
-          transition={{ ease: 'easeOut', duration: 0.4 }}
-          style={{
-            position: 'absolute', inset: -40, zIndex: 0,
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1.2px, transparent 1.2px)',
-            backgroundSize: '32px 32px',
-            maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)',
-          }}
-        />
-
-        <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '100px 24px 60px',
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center',
-          position: 'relative', zIndex: 1, width: '100%',
-        }}>
-          {/* Left: Headline & CTAs */}
-          <motion.div style={{ y: heroY }}>
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'rgba(168,85,247,0.1)',
-                border: '1px solid rgba(168,85,247,0.25)',
-                borderRadius: 99, padding: '4px 14px 4px 8px',
-                marginBottom: 28,
-              }}
+        {/* Action */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {user ? (
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="btn-primary"
+              style={{ padding: '8px 16px', fontSize: '12.5px' }}
             >
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              Dashboard
+            </button>
+          ) : (
+            <>
+              <span
+                style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                onClick={() => navigate('/auth')}
               >
-                <Sparkles size={13} color="#a855f7" />
-              </motion.div>
-              <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 600 }}>
-                Introducing TaskFlow v2.0
+                Log In
               </span>
-            </motion.div>
-
-            {/* Headline with word-by-word fade reveal */}
-            <h1 style={{
-              fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.1,
-              marginBottom: 20,
-              margin: '0 0 20px',
-            }}>
-              <motion.span
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.6 }}
-                style={{ display: 'inline-block' }}
-              >Work smarter,</motion.span>{' '}
-              <motion.span
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.6 }}
+              <button
+                onClick={() => navigate('/auth')}
+                className="btn-primary"
                 style={{
-                  background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 50%, #3b82f6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  display: 'inline-block',
+                  padding: '8px 16px', fontSize: '12.5px',
+                  boxShadow: '0 4px 15px rgba(99,102,241,0.25)'
                 }}
-              >ship faster</motion.span>
-            </h1>
+              >
+                Sign Up
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
 
-            {/* Sub */}
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                fontSize: '1.05rem', color: 'rgba(255,255,255,0.45)',
-                lineHeight: 1.7, maxWidth: 440, margin: '0 0 36px',
-              }}
-            >
-              TaskFlow brings your team, tasks, and timelines into one beautiful
-              workspace — with real-time collaboration, smart automations,
-              and analytics that actually make sense.
-            </motion.p>
+      {/* ── HERO SECTION ─────────────────────────────────── */}
+      <section style={{
+        padding: '140px 24px 80px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        textAlign: 'center', position: 'relative', zIndex: 1
+      }}>
+        {/* Chip badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(99,102,241,0.08)',
+            border: '1px solid rgba(99,102,241,0.18)',
+            borderRadius: '99px', padding: '4px 12px',
+            marginBottom: '24px'
+          }}
+        >
+          <Sparkles size={11} style={{ color: '#818cf8' }} />
+          <span style={{ fontSize: '10px', fontWeight: 700, color: '#818cf8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Introducing TaskFlow
+          </span>
+        </motion.div>
 
-            {/* CTA buttons with micro-interaction */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45, duration: 0.6 }}
-              style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}
-            >
-              {user ? (
-                <motion.button
-                  onClick={() => navigate('/dashboard')}
-                  whileHover={{ scale: 1.03, y: -2, boxShadow: '0 12px 35px rgba(168,85,247,0.5)' }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                    border: 'none', borderRadius: 10, padding: '12px 28px',
-                    color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    transition: 'box-shadow 0.2s',
-                  }}
-                >
-                  Go to Dashboard <ArrowRight size={15} />
-                </motion.button>
-              ) : (
-                <>
-                  <motion.button
-                    onClick={goToAuth}
-                    whileHover={{ scale: 1.03, y: -2, boxShadow: '0 12px 35px rgba(168,85,247,0.5)' }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                      background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                      border: 'none', borderRadius: 10, padding: '12px 28px',
-                      color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      transition: 'box-shadow 0.2s',
-                    }}
-                  >
-                    Start for free <ArrowRight size={15} />
-                  </motion.button>
-                  <motion.button
-                    onClick={goToAuth}
-                    whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.07)', color: '#f5f5f7' }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 10, padding: '12px 24px',
-                      color: 'rgba(255,255,255,0.7)', fontSize: '14px', fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.2s',
-                    }}
-                  >
-                    Watch demo
-                  </motion.button>
-                </>
-              )}
-            </motion.div>
+        {/* Main Headline */}
+        <h1 style={{
+          fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+          fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1.05,
+          color: '#f5f5f7', margin: '0 0 20px', maxWidth: '680px'
+        }}>
+          Elevate Your <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #6366f1 30%, #a855f7 70%, #ec4899 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', display: 'inline-block',
+            filter: 'drop-shadow(0 0 30px rgba(99,102,241,0.2))'
+          }}>
+            Workflow.
+          </span>
+        </h1>
 
-            {/* Social proof */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 32 }}
-            >
-              <div style={{ display: 'flex' }}>
-                {['🧑‍💻','👩‍💼','🧑‍🎨','👨‍🔬','🧑‍💼'].map((em, i) => (
-                  <div key={i} style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: `hsl(${i * 40 + 240},60%,30%)`,
-                    border: '2px solid #0b0b0e',
-                    marginLeft: i > 0 ? -8 : 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '13px',
-                  }}>{em}</div>
-                ))}
-              </div>
-              <div>
-                <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
-                  {[1,2,3,4,5].map(i => <Star key={i} size={11} color="#f59e0b" fill="#f59e0b" />)}
-                </div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                  Trusted by <b style={{ color: 'rgba(255,255,255,0.7)' }}>{statsData.workspaces || '—'}</b> active workspaces
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+        {/* Subtitle */}
+        <p style={{
+          fontSize: 'clamp(0.95rem, 2vw, 1.1rem)',
+          color: 'rgba(255,255,255,0.45)', lineHeight: 1.6,
+          maxWidth: '520px', margin: '0 0 36px'
+        }}>
+          The Command-Bar First Operating System for Teams. Navigate complex tasks at the speed of thought.
+        </p>
 
-          {/* Right: Floating Glass UI Mockup with Staggered 3D Parallax layers */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <motion.button
+            onClick={() => navigate('/auth')}
+            whileHover={{ scale: 1.03, boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}
+            whileTap={{ scale: 0.97 }}
             style={{
-              position: 'relative',
-              minHeight: 520,
-              transform: `perspective(1000px) rotateX(${-mousePos.y * 0.45}deg) rotateY(${mousePos.x * 0.45}deg)`,
-              transition: 'transform 0.15s ease-out',
-              transformStyle: 'preserve-3d'
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              border: 'none', color: '#fff', fontWeight: 700, fontSize: '13px',
+              padding: '12px 28px', borderRadius: '10px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px'
             }}
           >
-            {/* Main dashboard card — gently floats up and down */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ transformStyle: 'preserve-3d' }}
-            >
-              <GlassCard delay={0.3} style={{ padding: 20 }}>
-                {/* Mini top bar */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 16, paddingBottom: 12,
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 6,
-                      background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Zap size={11} color="white" />
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#f5f5f7' }}>TaskFlow</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {['#ef4444','#f59e0b','#22c55e'].map(c => (
-                      <div key={c} style={{ width: 8, height: 8, borderRadius: '50%', background: c, opacity: 0.6 }} />
-                    ))}
-                  </div>
-                </div>
+            Start Building <ArrowRight size={13} />
+          </motion.button>
+          <motion.button
+            onClick={() => navigate('/auth')}
+            whileHover={{ scale: 1.03, background: 'rgba(255,255,255,0.06)' }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: '#f5f5f7', fontWeight: 600, fontSize: '13px',
+              padding: '12px 24px', borderRadius: '10px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '8px'
+            }}
+          >
+            Book Demo <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace' }}>⌘K</span>
+          </motion.button>
+        </div>
 
-                {/* Sprint header */}
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>Sprint 3 • Q3 2025</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#f5f5f7' }}>Website Redesign</span>
-                    <span style={{
-                      fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-                      background: 'rgba(168,85,247,0.15)', color: '#c084fc',
-                      border: '1px solid rgba(168,85,247,0.2)',
-                    }}>Active</span>
-                  </div>
-                </div>
+        {/* Mock Command Bar */}
+        <CommandBarMockup />
+      </section>
 
-                {/* Task cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <FloatingTaskCard title="Design new dashboard layout" tag="Design" tag2="In Progress" avatar="🎨" progress={72} delay={0.5} />
-                  <FloatingTaskCard title="Implement OAuth 2.0 flow" tag="Backend" avatar="⚙️" progress={100} delay={0.6} />
-                  <FloatingTaskCard title="Write unit tests for API" tag="Testing" tag2="Todo" avatar="🧪" progress={24} delay={0.7} />
-                </div>
-              </GlassCard>
-            </motion.div>
+      {/* ── FEATURE CARDS ────────────────────────────────── */}
+      <section style={{
+        maxWidth: '1000px', margin: '0 auto', padding: '60px 24px 80px',
+        position: 'relative', zIndex: 1
+      }}>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'
+        }}>
+          <FeatureCard
+            title="Instant Response"
+            desc="Built for low-latency interactions across global teams."
+            metricLabel1="LATENCY"
+            metricValue1="12ms"
+            metricLabel2="SLA"
+            metricValue2="99.9%"
+            icon={Cpu}
+            accent="#818cf8"
+            bgGlow="rgba(99,102,241,0.15)"
+            delay={0}
+          />
+          <FeatureCard
+            title="Real-time Sync"
+            desc="State of the art sync to ensure absolute team coordination."
+            metricLabel1="SYNC"
+            metricValue1="100/SEC"
+            metricLabel2="REPL"
+            metricValue2="realtime"
+            icon={Activity}
+            accent="#a855f7"
+            bgGlow="rgba(168,85,247,0.15)"
+            delay={0.1}
+          />
+          <FeatureCard
+            title="E2E Privacy"
+            desc="Your transaction is fully encrypted. Only you hold the keys."
+            metricLabel1="CIPHER"
+            metricValue1="AES-256"
+            metricLabel2="KEY"
+            metricValue2="client-side"
+            icon={Shield}
+            accent="#10b981"
+            bgGlow="rgba(16,185,129,0.15)"
+            delay={0.2}
+          />
+        </div>
+      </section>
 
-            {/* Floating analytics mini card — floats at different speed + counter parallax */}
-            <motion.div
-              animate={{ y: [0, 8, 0], x: [0, -4, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+      {/* ── TRUSTED BY LOGOS ─────────────────────────────── */}
+      <section style={{
+        padding: '30px 24px 50px', borderTop: '1px solid rgba(255,255,255,0.03)',
+        textAlign: 'center', position: 'relative', zIndex: 1
+      }}>
+        <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          POWERING THE WORLD'S BEST TEAMS
+        </span>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', marginTop: '24px',
+          alignItems: 'center', opacity: 0.35, filter: 'grayscale(100%)'
+        }}>
+          {['vercel', 'supabase', 'linear', 'prisma', 'render'].map(logo => (
+            <span key={logo} style={{ fontSize: '13.5px', fontWeight: 800, letterSpacing: '-0.02em', color: '#fff', fontFamily: 'monospace' }}>
+              {logo}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* ── CTA ACCELERATE CARD ──────────────────────────── */}
+      <section style={{
+        maxWidth: '740px', margin: '0 auto', padding: '60px 24px 100px',
+        position: 'relative', zIndex: 1
+      }}>
+        <motion.div
+          whileHover={{ borderColor: 'rgba(99,102,241,0.2)' }}
+          style={{
+            background: 'rgba(255,255,255,0.015)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            borderRadius: '20px', padding: '48px 40px',
+            textAlign: 'center', position: 'relative', overflow: 'hidden'
+          }}
+        >
+          {/* Ambient glow */}
+          <div style={{
+            position: 'absolute', bottom: -50, right: -50, width: 140, height: 140,
+            borderRadius: '50%', background: 'rgba(99,102,241,0.08)', filter: 'blur(40px)', pointerEvents: 'none'
+          }} />
+
+          <h2 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 10px 0' }}>
+            Ready to accelerate?
+          </h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5, maxWidth: '440px', margin: '0 auto 28px' }}>
+            Join 12,000+ teams shipping faster with the TaskFlow command interface.
+          </p>
+
+          <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', gap: '8px', maxWidth: '400px', margin: '0 auto', flexWrap: 'wrap' }}>
+            <input
+              type="email"
+              placeholder="work@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
               style={{
-                position: 'absolute', top: -28, right: -24, zIndex: 2,
-                transform: `translate3d(${-mousePos.x * 0.3}px, ${-mousePos.y * 0.3}px, 40px)`
+                flex: 1, minWidth: '220px', background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px',
+                padding: '10px 14px', color: '#fff', fontSize: '13px', outline: 'none'
+              }}
+            />
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                border: 'none', color: '#fff', fontWeight: 700, fontSize: '12.5px',
+                padding: '10px 20px', borderRadius: '8px', cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(99,102,241,0.25)', whiteSpace: 'nowrap'
               }}
             >
-              <GlassCard
-                delay={0.6}
-                style={{
-                  padding: '14px 18px', minWidth: 180,
-                  boxShadow: '0 12px 48px rgba(168,85,247,0.15)',
-                  background: 'rgba(11,11,14,0.7)',
-                }}
-              >
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>Team Velocity</div>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 36 }}>
-                  {[40, 60, 45, 80, 65, 90, 75].map((h, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ height: 0 }}
-                      animate={{ height: h * 0.4 }}
-                      transition={{ delay: 0.8 + i * 0.05, duration: 0.4, ease: 'easeOut' }}
-                      style={{
-                        flex: 1, borderRadius: 3,
-                        background: i === 5
-                          ? 'linear-gradient(180deg, #a855f7, #6366f1)'
-                          : 'rgba(255,255,255,0.08)',
-                      }}
-                    />
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#22c55e' }}>↑ 23%</span>
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>vs last sprint</span>
-                </div>
-              </GlassCard>
-            </motion.div>
-
-            {/* Floating notification mini card — floats at third speed + counter parallax */}
-            <motion.div
-              animate={{ y: [0, -8, 0], x: [0, 5, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-              style={{
-                position: 'absolute', bottom: -20, left: -24, zIndex: 2,
-                transform: `translate3d(${-mousePos.x * 0.2}px, ${-mousePos.y * 0.2}px, 60px)`
-              }}
-            >
-              <GlassCard
-                delay={0.7}
-                style={{
-                  padding: '12px 16px', minWidth: 210,
-                  boxShadow: '0 8px 32px rgba(99,102,241,0.15)',
-                  background: 'rgba(11,11,14,0.7)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: 8,
-                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <CheckCircle size={15} color="white" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#f5f5f7' }}>Task completed!</div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>OAuth flow • just now</div>
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </motion.div>
-        </div>
+              Get Early Access
+            </motion.button>
+          </form>
+        </motion.div>
       </section>
 
-      {/* ── STATS ───────────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '60px 24px', zIndex: 1 }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <GlassCard delay={0.1} style={{ padding: '32px 40px' }}>
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, textAlign: 'center',
-            }}>
-              {[
-                { number: statsData.uptimeSla, label: 'Uptime SLA' },
-                { number: `${statsData.workspaces}`, label: 'Active Workspaces' },
-                { number: `${statsData.apiLatency}ms`, label: 'API Latency (Live)' },
-                { number: `${statsData.tasks}`, label: 'Tasks Managed' },
-              ].map((s, i) => (
-                <StatCard key={i} {...s} delay={i * 0.08} />
-              ))}
-            </div>
-          </GlassCard>
+      {/* ── FOOTER ────────────────────────────────────────── */}
+      <footer style={{
+        borderTop: '1px solid rgba(255,255,255,0.03)',
+        padding: '32px 24px', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.25)',
+        flexWrap: 'wrap', gap: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontWeight: 800, color: '#f5f5f7' }}>TaskFlow</span>
+          <span>© {new Date().getFullYear()}</span>
         </div>
-      </section>
 
-      {/* ── FEATURES ───────────────────────────────── */}
-      <section ref={featuresRef} style={{ position: 'relative', padding: '80px 24px', zIndex: 1 }}>
-        <GlowOrb initialX="50%" initialY="50%" color="rgba(99,102,241,0.4)" size={750} duration={14} />
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: 56 }}
-          >
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(99,102,241,0.1)',
-              border: '1px solid rgba(99,102,241,0.2)',
-              borderRadius: 99, padding: '4px 14px 4px 8px',
-              marginBottom: 20,
-            }}>
-              <Globe size={12} color="#818cf8" />
-              <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 600 }}>Everything you need</span>
-            </div>
-            <h2 style={{
-              fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.04em',
-              margin: '0 0 14px',
-            }}>
-              Built for modern teams
-            </h2>
-            <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', maxWidth: 500, margin: '0 auto', lineHeight: 1.7 }}>
-              Every feature is designed to reduce friction, improve visibility, and help your team ship consistently.
-            </p>
-          </motion.div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 18,
-          }}>
-            {features.map((f) => (
-              <FeatureCard key={f.title} {...f} />
-            ))}
-          </div>
+        <div style={{ display: 'flex', gap: '16px', fontWeight: 500 }}>
+          <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
+          <span style={{ cursor: 'pointer' }}>Terms of Service</span>
+          <span style={{ cursor: 'pointer' }}>Contact</span>
         </div>
-      </section>
-
-      {/* ── PRICING SECTION ─────────────────────────── */}
-      <section ref={pricingRef} style={{ position: 'relative', padding: '80px 24px', zIndex: 1 }}>
-        <GlowOrb initialX="15%" initialY="50%" color="rgba(168,85,247,0.3)" size={650} duration={16} />
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: 44 }}
-          >
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(168,85,247,0.1)',
-              border: '1px solid rgba(168,85,247,0.2)',
-              borderRadius: 99, padding: '4px 14px 4px 8px',
-              marginBottom: 20,
-            }}>
-              <DollarSign size={12} color="#c084fc" />
-              <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 600 }}>Simple pricing</span>
-            </div>
-            <h2 style={{
-              fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.04em',
-              margin: '0 0 14px',
-            }}>
-              Plans that grow with you
-            </h2>
-            <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', maxWidth: 500, margin: '0 auto 28px', lineHeight: 1.7 }}>
-              Start for free, then upgrade as your team scales. No hidden fees.
-            </p>
-
-            {/* Monthly/Yearly toggle */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: 4 }}>
-              <button
-                type="button"
-                onClick={() => setBillingCycle('monthly')}
-                style={{
-                  border: 'none', borderRadius: 99, padding: '6px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  background: billingCycle === 'monthly' ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'transparent',
-                  color: billingCycle === 'monthly' ? '#fff' : 'rgba(255,255,255,0.4)',
-                  transition: 'all 0.2s',
-                }}
-              >Monthly</button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle('yearly')}
-                style={{
-                  border: 'none', borderRadius: 99, padding: '6px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  background: billingCycle === 'yearly' ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'transparent',
-                  color: billingCycle === 'yearly' ? '#fff' : 'rgba(255,255,255,0.4)',
-                  transition: 'all 0.2s',
-                }}
-              >Yearly <span style={{ color: '#22c55e', fontSize: '10px' }}>-20%</span></button>
-            </div>
-            <div style={{ marginTop: 24 }}>
-              <span
-                onClick={goToPricing}
-                style={{ fontSize: '13px', color: '#c084fc', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500, transition: 'all 0.2s' }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLSpanElement).style.textDecoration = 'underline';
-                  (e.currentTarget as HTMLSpanElement).style.color = '#a855f7';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLSpanElement).style.textDecoration = 'none';
-                  (e.currentTarget as HTMLSpanElement).style.color = '#c084fc';
-                }}
-              >
-                Compare all features in detail <ChevronRight size={14} />
-              </span>
-            </div>
-          </motion.div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 24,
-            alignItems: 'stretch',
-          }}>
-            {/* Free Plan */}
-            <GlassCard delay={0.1} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ flexGrow: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Free</h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Perfect for side projects and freelancers.</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>$0</span>
-                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ forever</span>
-                </div>
-                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {['1 Workspace', 'Up to 3 active projects', 'Up to 10 workspace members', 'Standard kanban boards', 'Basic time logs'].map((feat, idx) => (
-                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                      <CheckCircle size={14} color="#a855f7" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  width: '100%', padding: '11px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 10, color: '#f5f5f7', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Sign Up Free
-              </motion.button>
-            </GlassCard>
-
-            {/* Pro Plan */}
-            <GlassCard delay={0.2} style={{
-              padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%',
-              borderColor: 'rgba(168,85,247,0.3)',
-              boxShadow: '0 12px 40px rgba(168,85,247,0.15)',
-              position: 'relative',
-            }}>
-              <div style={{
-                position: 'absolute', top: -12, right: 28,
-                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                padding: '4px 12px', borderRadius: 99, fontSize: '10px', fontWeight: 750, color: '#fff',
-                boxShadow: '0 4px 12px rgba(168,85,247,0.3)',
-              }}>RECOMMENDED</div>
-              <div style={{ flexGrow: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Pro</h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>For active teams requiring high velocity.</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>
-                    ${billingCycle === 'monthly' ? '12' : '10'}
-                  </span>
-                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ member / month</span>
-                </div>
-                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {['Unlimited Workspaces', 'Unlimited active projects', 'Unlimited workspace members', 'Priority board time logs & analytics', 'CSV & Billing PDF Exports', 'Custom task categories', 'Priority support'].map((feat, idx) => (
-                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                      <CheckCircle size={14} color="#a855f7" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.02, boxShadow: '0 8px 24px rgba(168,85,247,0.3)' }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  width: '100%', padding: '11px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none',
-                  borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Get Started
-              </motion.button>
-            </GlassCard>
-
-            {/* Enterprise Plan */}
-            <GlassCard delay={0.3} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ flexGrow: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f5f5f7', marginBottom: 8 }}>Enterprise</h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Custom security, scale and SLA requirements.</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f5f5f7' }}>Custom</span>
-                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>/ custom contract</span>
-                </div>
-                <ul style={{ padding: 0, margin: '0 0 32px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {['Everything in Pro', 'SSO / SAML Okta Login Integration', 'Dedicated database nodes', '99.99% Guaranteed SLA contract', 'Dedicated Account Manager', 'Custom integrations & reports'].map((feat, idx) => (
-                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                      <CheckCircle size={14} color="#a855f7" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  width: '100%', padding: '11px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 10, color: '#f5f5f7', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Contact Sales
-              </motion.button>
-            </GlassCard>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA SECTION ──────────────────────────────── */}
-      <section style={{ padding: '80px 24px 100px', position: 'relative', zIndex: 1 }}>
-        <GlowOrb initialX="50%" initialY="50%" color="rgba(168,85,247,0.4)" size={600} duration={12} />
-        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <GlassCard delay={0.1} style={{
-            padding: '56px 48px',
-            boxShadow: '0 16px 64px rgba(168,85,247,0.1), inset 0 1px 0 rgba(255,255,255,0.07)',
-          }}>
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 16px' }}>
-                Ready to transform your workflow?
-              </h2>
-              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', margin: '0 0 32px', lineHeight: 1.6 }}>
-                Join thousands of developers and teams who use TaskFlow to manage projects, log progress, and collaborate seamlessly.
-              </p>
-              <motion.button
-                onClick={goToAuth}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                  border: 'none', borderRadius: 10, padding: '12px 32px',
-                  color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  boxShadow: '0 8px 32px rgba(168,85,247,0.4)',
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                }}
-              >
-                Get Started Now <ArrowRight size={15} />
-              </motion.button>
-            </motion.div>
-          </GlassCard>
-        </div>
-      </section>
+      </footer>
     </div>
   );
 }
