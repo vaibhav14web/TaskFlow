@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../api';
-import { BarChart3, AlertTriangle, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, AlertTriangle, TrendingUp, Users, Activity } from 'lucide-react';
 
 interface AnalyticsTabProps {
   projects: any[];
@@ -17,8 +17,17 @@ const barGradients = [
   'linear-gradient(135deg,#818cf8,#c084fc)',
 ];
 
+const sectionVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }
+  }),
+};
+
 export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps) {
   const [selectedProjId, setSelectedProjId] = useState('');
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
 
   useEffect(() => {
     if (projects.length > 0 && !selectedProjId) {
@@ -77,9 +86,16 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
 
   const renderTrendChart = () => {
     if (trendData.length === 0) return (
-      <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', color: 'var(--color-text-dim)', fontSize: 'var(--text-sm)' }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ textAlign: 'center', padding: 'var(--space-2xl)', color: 'var(--color-text-dim)', fontSize: 'var(--text-sm)' }}
+      >
+        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 3 }} style={{ fontSize: '2rem', marginBottom: '12px' }}>
+          📈
+        </motion.div>
         No completion data yet — complete some tasks to see your trend!
-      </div>
+      </motion.div>
     );
 
     const maxVal = Math.max(...trendData.map((d: any) => d.completedCount), 1);
@@ -99,7 +115,6 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
       ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
       : '';
 
-    // Y-axis grid values
     const yGridRatios = [0, 0.25, 0.5, 0.75, 1];
 
     return (
@@ -107,13 +122,18 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
         <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} style={{ overflow: 'visible' }}>
           <defs>
             <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.4" />
               <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0.0" />
             </linearGradient>
-
-            {/* Glow filter on the line */}
             <filter id="lineGlow">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="dotGlow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -133,16 +153,16 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
                   strokeDasharray="4 6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: idx * 0.05, duration: 0.4 }}
+                  transition={{ delay: idx * 0.06, duration: 0.5 }}
                 />
                 <motion.text
                   x={paddingX - 8} y={y + 4}
-                  fill="rgba(255,255,255,0.3)"
+                  fill="rgba(255,255,255,0.28)"
                   fontSize={9}
                   textAnchor="end"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                  transition={{ delay: idx * 0.06 + 0.1, duration: 0.4 }}
                 >
                   {val}
                 </motion.text>
@@ -150,18 +170,18 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
             );
           })}
 
-          {/* Gradient area — fades in after line starts drawing */}
+          {/* Gradient area */}
           {areaPath && (
             <motion.path
               d={areaPath}
               fill="url(#trendGradient)"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
+              transition={{ delay: 0.7, duration: 1 }}
             />
           )}
 
-          {/* Main animated drawing line — draws from left to right */}
+          {/* Main animated drawing line */}
           {linePath && (
             <motion.path
               d={linePath}
@@ -173,21 +193,20 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
               filter="url(#lineGlow)"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ pathLength: { duration: 1.4, ease: 'easeInOut' }, opacity: { duration: 0.1 } }}
+              transition={{ pathLength: { duration: 1.6, ease: 'easeInOut' }, opacity: { duration: 0.1 } }}
             />
           )}
 
-          {/* Data point nodes — spring in staggered after line finishes */}
+          {/* Data point nodes */}
           {points.map((p, idx) => (
             <motion.g key={idx}>
-              {/* Outer ring pulse */}
+              {/* Pulse ring */}
               <motion.circle
-                cx={p.x} cy={p.y} r="8"
+                cx={p.x} cy={p.y} r="10"
                 fill="var(--color-primary)"
-                opacity={0}
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: [0, 1.6, 0], opacity: [0, 0.15, 0] }}
-                transition={{ delay: idx * 0.1 + 1.3, duration: 0.6 }}
+                animate={{ scale: [0, 1.8, 0], opacity: [0, 0.2, 0] }}
+                transition={{ delay: idx * 0.12 + 1.4, duration: 0.8 }}
               />
               {/* Main dot */}
               <motion.circle
@@ -195,25 +214,26 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
                 fill="var(--color-bg)"
                 stroke="var(--color-primary)"
                 strokeWidth="2.5"
+                filter="url(#dotGlow)"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                whileHover={{ scale: 1.8 }}
-                transition={{ type: 'spring', stiffness: 340, damping: 14, delay: idx * 0.1 + 1.2 }}
+                whileHover={{ scale: 2 }}
+                transition={{ type: 'spring', stiffness: 340, damping: 14, delay: idx * 0.12 + 1.3 }}
                 style={{ cursor: 'pointer' }}
               >
                 <title>{`${new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${p.count} task${p.count !== 1 ? 's' : ''} completed`}</title>
               </motion.circle>
-              {/* Count label above high-value nodes */}
+              {/* Count label */}
               {p.count > 0 && (
                 <motion.text
-                  x={p.x} y={p.y - 10}
+                  x={p.x} y={p.y - 12}
                   textAnchor="middle"
                   fill="var(--color-primary)"
                   fontSize={9}
                   fontWeight={700}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 + 1.5, duration: 0.3 }}
+                  transition={{ delay: idx * 0.12 + 1.6, duration: 0.3 }}
                 >
                   {p.count}
                 </motion.text>
@@ -229,13 +249,13 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
             return (
               <motion.text
                 key={idx}
-                x={p.x} y={height + 12}
+                x={p.x} y={height + 14}
                 textAnchor="middle"
-                fill="rgba(255,255,255,0.3)"
+                fill="rgba(255,255,255,0.28)"
                 fontSize={9}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.6 + idx * 0.05, duration: 0.4 }}
+                transition={{ delay: 1.8 + idx * 0.06, duration: 0.4 }}
               >
                 {label}
               </motion.text>
@@ -246,96 +266,156 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
     );
   };
 
-
   const totalTasks = Object.values(breakdown).reduce((a, b) => a + b, 0);
   const maxCount = Math.max(...Object.values(breakdown), 1);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}
     >
       {/* Project Selector */}
-      <div className="glass" style={{ padding: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
+      <motion.div
+        custom={0} variants={sectionVariants} initial="hidden" animate="visible"
+        className="glass"
+        style={{ padding: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <BarChart3 size={18} style={{ color: 'var(--color-primary)' }} />
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut', repeatDelay: 3 }}
+          >
+            <Activity size={18} style={{ color: 'var(--color-primary)' }} />
+          </motion.div>
           <span style={{ fontSize: 'var(--text-md)', fontWeight: 600 }}>Project Analytics</span>
         </div>
-        <select
+        <motion.select
           className="tf-input"
           style={{ maxWidth: 280 }}
           value={selectedProjId}
           onChange={e => setSelectedProjId(e.target.value)}
+          whileFocus={{ borderColor: 'rgba(168,85,247,0.4)' }}
         >
           {projects.map((p: any) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
-        </select>
-      </div>
+        </motion.select>
+      </motion.div>
 
       {!selectedProjId ? (
-        <div className="glass empty-state">
-          <div className="empty-state-icon">📊</div>
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="glass empty-state"
+        >
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            className="empty-state-icon"
+          >
+            📊
+          </motion.div>
           <div className="empty-state-title">No projects to analyze</div>
           <div className="empty-state-desc">Create a project first to view analytics.</div>
-        </div>
+        </motion.div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 'var(--space-xl)' }}>
 
-          {/* Completion Trend - Area Chart */}
+          {/* Completion Trend */}
           <motion.div
             className="glass"
-            style={{ padding: 'var(--space-xl)', gridColumn: '1 / -1' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
+            style={{ padding: 'var(--space-xl)', gridColumn: '1 / -1', position: 'relative', overflow: 'hidden' }}
+            custom={1} variants={sectionVariants} initial="hidden" animate="visible"
+            whileHover={{ boxShadow: '0 8px 32px rgba(168,85,247,0.08)' }}
           >
+            {/* Corner glow decoration */}
+            <div style={{
+              position: 'absolute', top: -30, right: -30, width: 120, height: 120,
+              borderRadius: '50%', background: 'rgba(99,102,241,0.06)', filter: 'blur(40px)', pointerEvents: 'none',
+            }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-              <TrendingUp size={18} style={{ color: 'var(--color-primary)' }} />
+              <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+              >
+                <TrendingUp size={18} style={{ color: 'var(--color-primary)' }} />
+              </motion.div>
               <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>Task Completion Trend (Last 7 Days)</h3>
             </div>
             {renderTrendChart()}
           </motion.div>
 
-          {/* Status Breakdown - Bar Chart */}
+          {/* Status Breakdown */}
           <motion.div
             className="glass"
             style={{ padding: 'var(--space-xl)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            custom={2} variants={sectionVariants} initial="hidden" animate="visible"
+            whileHover={{ boxShadow: '0 8px 32px rgba(168,85,247,0.07)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-xl)' }}>
-              <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>Task Distribution</h3>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{totalTasks} total</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+                >
+                  <BarChart3 size={16} style={{ color: 'var(--color-primary)' }} />
+                </motion.div>
+                <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>Task Distribution</h3>
+              </div>
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, delay: 0.3 }}
+                style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}
+              >
+                {totalTasks} total
+              </motion.span>
             </div>
 
             {Object.keys(breakdown).length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {Object.entries(breakdown).map(([status, count], i) => (
-                  <div key={status} className="chart-bar-row">
-                    <div className="chart-bar-label">{status}</div>
-                    <div className="chart-bar-track">
+                  <motion.div
+                    key={status}
+                    className="chart-bar-row"
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    onMouseEnter={() => setHoveredBar(status)}
+                    onMouseLeave={() => setHoveredBar(null)}
+                    style={{ cursor: 'default' }}
+                  >
+                    <div className="chart-bar-label" style={{ fontWeight: hoveredBar === status ? 700 : 500, transition: 'font-weight 0.2s' }}>{status}</div>
+                    <div className="chart-bar-track" style={{ position: 'relative' }}>
                       <motion.div
                         className="chart-bar-fill"
                         style={{ background: barGradients[i % barGradients.length] }}
                         initial={{ width: 0 }}
                         animate={{ width: `${(count / maxCount) * 100}%` }}
-                        transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: 0.3 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        whileHover={{ filter: 'brightness(1.15)' }}
                       >
                         {count > 0 ? count : ''}
                       </motion.div>
                     </div>
-                    <div className="chart-bar-value">{count}</div>
-                  </div>
+                    <motion.div
+                      className="chart-bar-value"
+                      animate={{ scale: hoveredBar === status ? 1.15 : 1, color: hoveredBar === status ? '#f5f5f7' : undefined }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {count}
+                    </motion.div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', padding: 'var(--space-xl)' }}>
+              <motion.p
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', padding: 'var(--space-xl)' }}
+              >
                 No task data available yet.
-              </p>
+              </motion.p>
             )}
           </motion.div>
 
@@ -343,47 +423,80 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
           <motion.div
             className="glass"
             style={{ padding: 'var(--space-xl)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            custom={3} variants={sectionVariants} initial="hidden" animate="visible"
+            whileHover={{ boxShadow: '0 8px 32px rgba(239,68,68,0.07)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-              <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />
+              <motion.div
+                animate={{ rotate: overdueTasks.length > 0 ? [0, 8, -8, 0] : 0 }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut', repeatDelay: 2 }}
+              >
+                <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />
+              </motion.div>
               <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>
                 Overdue Tasks
-                {overdueTasks.length > 0 && (
-                  <span style={{
-                    marginLeft: 8, fontSize: 'var(--text-xs)', fontWeight: 700,
-                    background: 'rgba(239,68,68,0.15)', color: 'var(--color-danger)',
-                    padding: '2px 8px', borderRadius: 'var(--radius-full)',
-                  }}>
-                    {overdueTasks.length}
-                  </span>
-                )}
+                <AnimatePresence>
+                  {overdueTasks.length > 0 && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      style={{
+                        marginLeft: 8, fontSize: 'var(--text-xs)', fontWeight: 700,
+                        background: 'rgba(239,68,68,0.15)', color: 'var(--color-danger)',
+                        padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                        display: 'inline-block',
+                      }}
+                    >
+                      {overdueTasks.length}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', maxHeight: 240, overflowY: 'auto' }}>
               {overdueTasks.length > 0 ? (
-                overdueTasks.map((t: any) => (
-                  <div
+                overdueTasks.map((t: any, i: number) => (
+                  <motion.div
                     key={t.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.07, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ x: 4, borderColor: 'rgba(239,68,68,0.35)' }}
                     style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: 'var(--space-sm) var(--space-md)',
                       background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)',
-                      borderRadius: 'var(--radius-md)',
+                      borderRadius: 'var(--radius-md)', cursor: 'default',
+                      transition: 'border-color 0.2s',
                     }}
                   >
                     <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{t.title}</span>
-                    <span className="badge badge-urgent">OVERDUE</span>
-                  </div>
+                    <motion.span
+                      animate={{ opacity: [1, 0.6, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="badge badge-urgent"
+                    >
+                      OVERDUE
+                    </motion.span>
+                  </motion.div>
                 ))
               ) : (
-                <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', color: 'var(--color-text-muted)' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>🌟</div>
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  style={{ textAlign: 'center', padding: 'var(--space-2xl)', color: 'var(--color-text-muted)' }}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut', repeatDelay: 2 }}
+                    style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}
+                  >
+                    🌟
+                  </motion.div>
                   <p style={{ fontSize: 'var(--text-sm)' }}>No overdue tasks!</p>
-                </div>
+                </motion.div>
               )}
             </div>
           </motion.div>
@@ -392,31 +505,45 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
           <motion.div
             className="glass"
             style={{ padding: 'var(--space-xl)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            custom={4} variants={sectionVariants} initial="hidden" animate="visible"
+            whileHover={{ boxShadow: '0 8px 32px rgba(245,158,11,0.07)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-              <TrendingUp size={18} style={{ color: 'var(--color-warning)' }} />
+              <motion.div
+                animate={{ y: [0, -2, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+              >
+                <TrendingUp size={18} style={{ color: 'var(--color-warning)' }} />
+              </motion.div>
               <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>Column Bottlenecks</h3>
             </div>
 
             {bottlenecks.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                 {bottlenecks.map((b: any, i: number) => (
-                  <div
+                  <motion.div
                     key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ x: 4, background: 'rgba(245,158,11,0.06)' }}
                     style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: 'var(--space-sm) var(--space-md)',
                       background: 'var(--color-surface)', borderRadius: 'var(--radius-md)',
+                      transition: 'background 0.2s',
                     }}
                   >
                     <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{b.columnName || b.column}</span>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-warning)' }}>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 + i * 0.08, type: 'spring' }}
+                      style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-warning)' }}
+                    >
                       {typeof b.avgDays === 'number' ? `${b.avgDays.toFixed(1)}d avg` : `${b.taskCount || b.count} tasks`}
-                    </span>
-                  </div>
+                    </motion.span>
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -430,12 +557,16 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
           <motion.div
             className="glass"
             style={{ padding: 'var(--space-xl)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            custom={5} variants={sectionVariants} initial="hidden" animate="visible"
+            whileHover={{ boxShadow: '0 8px 32px rgba(14,165,233,0.07)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-              <Users size={18} style={{ color: 'var(--color-info)' }} />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              >
+                <Users size={18} style={{ color: 'var(--color-info)' }} />
+              </motion.div>
               <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>Team Workload</h3>
             </div>
 
@@ -445,22 +576,48 @@ export default function AnalyticsTab({ projects, currentWs }: AnalyticsTabProps)
                   const total = (w.active || 0) + (w.completed || 0);
                   const completionPct = total > 0 ? Math.round(((w.completed || 0) / total) * 100) : 0;
                   return (
-                    <div key={i}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-xs)' }}>
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + i * 0.09, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      whileHover={{ x: 2 }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-xs)', alignItems: 'center' }}>
                         <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{w.userName || w.name}</span>
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                          {w.active || 0} active · {w.completed || 0} done
-                        </span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                            {w.active || 0} active · {w.completed || 0} done
+                          </span>
+                          <motion.span
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 + i * 0.09 }}
+                            style={{ fontSize: '10px', fontWeight: 700, color: '#10b981' }}
+                          >
+                            {completionPct}%
+                          </motion.span>
+                        </div>
                       </div>
-                      <div className="progress-bar">
+                      <div className="progress-bar" style={{ position: 'relative', overflow: 'hidden' }}>
                         <motion.div
                           className="progress-fill success"
                           initial={{ width: 0 }}
                           animate={{ width: `${completionPct}%` }}
-                          transition={{ delay: 0.5 + i * 0.1, duration: 0.6 }}
+                          transition={{ delay: 0.5 + i * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                        {/* Shimmer effect */}
+                        <motion.div
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ delay: 1.2 + i * 0.1, duration: 1.5, ease: 'easeInOut' }}
+                          style={{
+                            position: 'absolute', top: 0, left: 0, bottom: 0, width: '40%',
+                            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                            pointerEvents: 'none',
+                          }}
                         />
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
