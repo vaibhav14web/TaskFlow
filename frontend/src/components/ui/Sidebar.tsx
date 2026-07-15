@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, BarChart3, Settings, LogOut,
-  ChevronLeft, ChevronRight, Bell
+  ChevronLeft, ChevronRight, Bell, Folder, Layers
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -15,10 +15,11 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: 'projects',  label: 'Projects',  icon: LayoutDashboard, shortcut: '1' },
-  { id: 'members',   label: 'Members',   icon: Users,           shortcut: '2' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3,       shortcut: '3' },
-  { id: 'settings',  label: 'Settings',  icon: Settings,        shortcut: '4' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, shortcut: '1', badge: 301 },
+  { id: 'projects',  label: 'Projects',  icon: Folder,          shortcut: '2' },
+  { id: 'members',   label: 'Members',   icon: Users,           shortcut: '3' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3,       shortcut: '4', badge: 301 },
+  { id: 'settings',  label: 'Settings',  icon: Settings,        shortcut: '5' },
 ];
 
 /* ── Geometric TF Logo ─────────────────────────────── */
@@ -184,7 +185,21 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
                 </AnimatePresence>
               </div>
               {!collapsed && (
-                <div style={{ zIndex: 1, position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', zIndex: 1, position: 'relative' }}>
+                  {item.badge && (
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      padding: '2px 5px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.3)',
+                      fontFamily: 'monospace',
+                    }}>
+                      {item.badge}
+                    </span>
+                  )}
                   <Key>{item.shortcut}</Key>
                 </div>
               )}

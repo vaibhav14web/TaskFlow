@@ -12,6 +12,7 @@ import ProjectsTab from '../components/dashboard/ProjectsTab';
 import MembersTab from '../components/dashboard/MembersTab';
 import AnalyticsTab from '../components/dashboard/AnalyticsTab';
 import SettingsTab from '../components/dashboard/SettingsTab';
+import OverviewTab from '../components/dashboard/OverviewTab';
 
 function TFLogo({ size = 32 }: { size?: number }) {
   return (
@@ -129,7 +130,7 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'projects' | 'members' | 'analytics' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'members' | 'analytics' | 'settings'>('dashboard');
   const [newWsName, setNewWsName] = useState('');
   const [wsCreating, setWsCreating] = useState(false);
 
@@ -459,6 +460,7 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const tabTitles: Record<string, { title: string; desc: string }> = {
+    dashboard: { title: 'Dashboard', desc: 'Real-time system overview and modules' },
     projects:  { title: 'Projects',  desc: `All projects in ${currentWs?.name || 'your workspace'}` },
     members:   { title: 'Members',   desc: 'Manage team access and roles' },
     analytics: { title: 'Analytics', desc: 'Track progress and team velocity' },
@@ -548,6 +550,9 @@ export default function DashboardPage() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
+              {activeTab === 'dashboard' && (
+                <OverviewTab projects={projects} />
+              )}
               {activeTab === 'projects' && (
                 <ProjectsTab projects={projects} currentWs={currentWs} workspaces={workspaces} refetchProjects={refetchProjects} />
               )}
