@@ -4,7 +4,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import * as Sentry from "@sentry/react";
 import './index.css';
+
+// Initialize Sentry React SDK
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN || "https://e138a4d46ea3dbb4d081f21db59779df@o4507000000000000.ingest.us.sentry.io/4507000000000000",
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration({
+      maskAllText: false,
+      blockAllMedia: false,
+    }),
+  ],
+  tracesSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
 
 // Lazy load pages for chunk splitting
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -63,6 +79,85 @@ function PageLoader() {
   );
 }
 
+// Custom Glassmorphic Cyberpunk Fallback for Sentry Error Boundary
+function CyberFallbackComponent({ error, resetError }: { error: any; resetError: () => void }) {
+  return (
+    <div style={{
+      height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', background: '#07070a',
+      fontFamily: 'Inter, sans-serif', padding: '24px', boxSizing: 'border-box'
+    }}>
+      <div style={{
+        background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(239,68,68,0.18)',
+        borderRadius: '16px', padding: '36px', maxWidth: '520px', width: '100%',
+        textAlign: 'center', position: 'relative', overflow: 'hidden',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.6)'
+      }}>
+        {/* Glow accent */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+          background: 'linear-gradient(90deg, #ef4444, #f59e0b)'
+        }} />
+        
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '10px',
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto'
+        }}>
+          <span style={{ fontSize: '20px' }}>⚠️</span>
+        </div>
+
+        <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#f5f5f7', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
+          CRITICAL RUNTIME EXCEPTION
+        </h2>
+        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+          An unhandled error occurred in the React core. Sentry telemetry has captured the diagnostic logs and dispatched a telemetry alert.
+        </p>
+
+        {/* Error Details */}
+        <div style={{
+          background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.04)',
+          borderRadius: '8px', padding: '12px 16px', margin: '0 0 24px 0', textAlign: 'left',
+          maxHeight: '120px', overflowY: 'auto'
+        }}>
+          <div style={{ fontSize: '9px', fontWeight: 800, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', marginBottom: '4px' }}>
+            ERROR_MESSAGE
+          </div>
+          <code style={{ fontSize: '11px', fontFamily: 'monospace', color: '#ef4444', wordBreak: 'break-all' }}>
+            {error?.toString() || 'Unknown runtime error'}
+          </code>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '8px', padding: '8px 18px', color: '#f5f5f7',
+              fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all 0.2s'
+            }}
+          >
+            Reload Window
+          </button>
+          <button
+            onClick={resetError}
+            style={{
+              background: 'linear-gradient(135deg, #ef4444, #f59e0b)', border: 'none',
+              borderRadius: '8px', padding: '8px 18px', color: '#fff',
+              fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 4px 18px rgba(239,68,68,0.2)', transition: 'all 0.2s'
+            }}
+          >
+            Restart Session
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Guard({ children }: { children: React.ReactElement }): React.ReactElement {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -109,31 +204,33 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <QueryClientProvider client={qc}>
-          <Suspense fallback={<PageLoader />}>
-            <AppRoutes />
-          </Suspense>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: 'rgba(17,17,40,0.97)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#fff',
-                borderRadius: 12,
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '0.875rem',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
-              },
-              success: { iconTheme: { primary: '#22c55e', secondary: 'white' } },
-              error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
-            }}
-          />
-        </QueryClientProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <Sentry.ErrorBoundary fallback={({ error, resetError }) => <CyberFallbackComponent error={error} resetError={resetError} />}>
+      <BrowserRouter>
+        <AuthProvider>
+          <QueryClientProvider client={qc}>
+            <Suspense fallback={<PageLoader />}>
+              <AppRoutes />
+            </Suspense>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: 'rgba(17,17,40,0.97)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  borderRadius: 12,
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '0.875rem',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+                },
+                success: { iconTheme: { primary: '#22c55e', secondary: 'white' } },
+                error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
+              }}
+            />
+          </QueryClientProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </Sentry.ErrorBoundary>
   );
 }
