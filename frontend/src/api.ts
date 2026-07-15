@@ -54,7 +54,7 @@ export type User       = { id: string; name: string; email: string; avatarUrl?: 
 export type Workspace  = { id: string; name: string; ownerId: string; description?: string; allowedDomains?: string };
 export type Project    = { id: string; name: string; workspaceId: string; description?: string };
 export type Column     = { id: string; name: string; order: number; boardId: string };
-export type Task       = { id: string; title: string; description?: string; priority: 'LOW'|'MEDIUM'|'HIGH'|'URGENT'; dueDate?: string; order: number; columnId: string; assignees?: User[]; createdAt: string };
+export type Task       = { id: string; title: string; description?: string; priority: 'LOW'|'MEDIUM'|'HIGH'|'URGENT'; dueDate?: string; order: number; columnId: string; assignees?: User[]; createdAt: string; checklist?: any[]; timeLogs?: any[] };
 export type Attachment = { id: string; filename: string; url: string; taskId: string };
 
 // Auth

@@ -59,6 +59,11 @@ export const getProjectBoard = async (req: AuthenticatedRequest, res: Response, 
                     : {},
                   priorityFilter ? { priority: priorityFilter } : {}
                 ]
+              },
+              include: {
+                assignees: true,
+                checklist: true,
+                timeLogs: true
               }
             }
           }

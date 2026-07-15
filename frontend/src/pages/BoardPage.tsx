@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import {
   ArrowLeft, Plus, Search, X, GripVertical, Trash2,
-  Calendar, Pencil, DollarSign, Printer, ChevronLeft, ChevronRight
+  Calendar, Pencil, DollarSign, Printer, ChevronLeft, ChevronRight, Clock
 } from 'lucide-react';
 
 function FloatingParticle({ x, y, size, delay, duration, color = 'rgba(168,85,247,0.3)' }: {
@@ -204,18 +204,113 @@ function SortableTaskCard({ task, colIndex, onClick }: { task: Task; colIndex: n
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className={`badge ${priorityBadge[task.priority] || 'badge-low'}`} style={{ fontSize: '9px', padding: '2px 6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                className={`badge ${priorityBadge[task.priority] || 'badge-low'}`}
+                style={{
+                  fontSize: '9px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontFamily: 'var(--font-mono)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 1px rgba(0,0,0,0.2)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}
+              >
                 {task.priority}
               </span>
+              
               {task.dueDate && (
                 <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Calendar size={10} />
                   {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </span>
               )}
+
+              {/* Checklist SVG completion indicator */}
+              {task.checklist && task.checklist.length > 0 && (() => {
+                const total = task.checklist.length;
+                const completed = task.checklist.filter((item: any) => item.isDone).length;
+                const percentage = (completed / total) * 100;
+                const radius = 6;
+                const circumference = 2 * Math.PI * radius;
+                const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+                return (
+                  <div
+                    title={`${completed}/${total} checklist items completed`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}
+                  >
+                    <svg width="16" height="16" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle
+                        cx="8" cy="8" r={radius}
+                        fill="transparent"
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="1.5"
+                      />
+                      <circle
+                        cx="8" cy="8" r={radius}
+                        fill="transparent"
+                        stroke="#10b981"
+                        strokeWidth="1.5"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dashoffset 0.35s' }}
+                      />
+                    </svg>
+                    <span>{completed}/{total}</span>
+                  </div>
+                );
+              })()}
+
+              {/* Time logs indicator */}
+              {task.timeLogs && task.timeLogs.length > 0 && (() => {
+                const totalSeconds = task.timeLogs.reduce((acc: number, log: any) => acc + (log.durationSeconds || 0), 0);
+                const formatDurationShort = (seconds: number) => {
+                  const hrs = Math.floor(seconds / 3600);
+                  const mins = Math.floor((seconds % 3600) / 60);
+                  if (hrs > 0) return `${hrs}h ${mins}m`;
+                  return `${mins}m`;
+                };
+                return (
+                  <div
+                    title="Logged time duration"
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}
+                  >
+                    <Clock size={10} style={{ color: '#a855f7' }} />
+                    <span>{formatDurationShort(totalSeconds)}</span>
+                  </div>
+                );
+              })()}
             </div>
-            <Key>↵</Key>
+            
+            {/* Assignee Avatar Stacks */}
+            {task.assignees && task.assignees.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', direction: 'rtl' }}>
+                {task.assignees.slice(0, 3).map((a: any) => (
+                  <div
+                    key={a.id}
+                    title={a.name}
+                    style={{
+                      width: '18px', height: '18px', borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                      border: '1.5px solid #0b0b0e',
+                      marginRight: '-4px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '7px', fontWeight: 700, color: '#fff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                      flexShrink: 0
+                    }}
+                  >
+                    {a.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Key>↵</Key>
+            )}
           </div>
         </div>
       </motion.div>
@@ -236,7 +331,19 @@ function TaskCardOverlay({ task }: { task: Task }) {
     }}>
       <h4 style={{ fontSize: '13px', fontWeight: 650, color: '#f5f5f7', margin: '0 0 6px 0' }}>{task.title}</h4>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span className={`badge ${priorityBadge[task.priority] || 'badge-low'}`} style={{ fontSize: '9px', padding: '2px 6px' }}>{task.priority}</span>
+        <span
+          className={`badge ${priorityBadge[task.priority] || 'badge-low'}`}
+          style={{
+            fontSize: '9px',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-mono)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {task.priority}
+        </span>
       </div>
     </div>
   );
@@ -1020,6 +1127,57 @@ export default function BoardPage() {
                       />
                     );
                   })}
+
+                  {/* Vercel/Linear style inline Add Column trigger card */}
+                  {!showNewCol ? (
+                    <motion.div
+                      whileHover={{ borderColor: 'rgba(168,85,247,0.3)', backgroundColor: 'rgba(255,255,255,0.015)', y: -2 }}
+                      onClick={() => setShowNewCol(true)}
+                      style={{
+                        width: 280, flexShrink: 0, height: 120,
+                        border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        color: 'rgba(255,255,255,0.35)', cursor: 'pointer', gap: '8px',
+                        transition: 'border-color 0.2s, background-color 0.2s, transform 0.2s',
+                        marginLeft: 'var(--space-md)'
+                      }}
+                    >
+                      <Plus size={16} />
+                      <span style={{ fontSize: '13px', fontWeight: 600 }}>Create Column</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      style={{ width: 280, flexShrink: 0, marginLeft: 'var(--space-md)' }}
+                    >
+                      <div
+                        className="glass"
+                        style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid rgba(168,85,247,0.2)' }}
+                      >
+                        <input
+                          className="tf-input"
+                          placeholder="Column name…"
+                          value={newColName}
+                          onChange={e => setNewColName(e.target.value)}
+                          autoFocus
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') addColumn();
+                            if (e.key === 'Escape') setShowNewCol(false);
+                          }}
+                          style={{ fontSize: '13px', padding: '8px 12px' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button className="btn-primary" onClick={addColumn} style={{ padding: '6px 12px', fontSize: '12px', flex: 1 }}>
+                            Add
+                          </button>
+                          <button onClick={() => setShowNewCol(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '12px', flex: 1 }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </SortableContext>
             ) : (
@@ -1081,43 +1239,7 @@ export default function BoardPage() {
               </div>
             )}
 
-            {/* New column (Only in standard layout) */}
-            {groupBy === 'none' && showNewCol && (
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                style={{ width: 300, flexShrink: 0 }}
-              >
-                <div
-                  className="glass"
-                  style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}
-                >
-                  <input
-                    className="tf-input"
-                    placeholder="Column name…"
-                    value={newColName}
-                    onChange={e => setNewColName(e.target.value)}
-                    autoFocus
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') addColumn();
-                      if (e.key === 'Escape') setShowNewCol(false);
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                    <button
-                      className="btn-primary"
-                      style={{ flex: 1, padding: '0.5rem' }}
-                      onClick={addColumn}
-                    >
-                      Add Column
-                    </button>
-                    <button className="btn-ghost" onClick={() => setShowNewCol(false)}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+
           </div>
 
           <DragOverlay>

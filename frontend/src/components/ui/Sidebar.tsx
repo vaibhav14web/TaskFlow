@@ -248,7 +248,13 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        <motion.div
+          whileHover={{ x: collapsed ? 3 : -3 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </motion.div>
         {!collapsed && <span style={{ fontSize: '12px' }}>Collapse</span>}
       </button>
 
@@ -256,19 +262,34 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
       <div style={{ height: '1px', background: 'rgba(255,255,255,0.04)', margin: '4px 0' }} />
 
       {/* User info */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: collapsed ? '8px 0' : '8px 10px',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        borderRadius: '8px',
-      }}>
-        <div style={{
-          width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-          background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '11px', fontWeight: 700, color: '#fff',
-        }}>
-          {initials}
+      <motion.div
+        whileHover={{ backgroundColor: 'rgba(255,255,255,0.035)' }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: collapsed ? '8px 0' : '8px 10px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          borderRadius: '8px',
+          cursor: 'default',
+          transition: 'background-color 0.2s',
+          position: 'relative',
+        }}
+      >
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+            background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '11px', fontWeight: 700, color: '#fff',
+          }}>
+            {initials}
+          </div>
+          {/* Active online indicator dot */}
+          <span style={{
+            position: 'absolute', bottom: -2, right: -2,
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#10b981', border: '2px solid #0b0b0e',
+            display: 'block',
+          }} />
         </div>
         <AnimatePresence>
           {!collapsed && (
@@ -287,7 +308,7 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Sign out */}
       <button
