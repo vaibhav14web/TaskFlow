@@ -18,6 +18,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Search, ArrowLeft, Zap, Code, Keyboard, Layout, Settings,
   Copy, Check, Menu, X, ChevronRight, Rocket, Shield, GitBranch,
@@ -631,12 +632,27 @@ function HelpfulWidget({ sectionId }: { sectionId: string }) {
 
 export default function DocsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { section: sectionParam } = useParams<{ section?: string }>();
   const [activeSectionId, setActiveSectionId] = useState(sectionParam || 'quickstart');
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    setMousePos({ x: (clientX - window.innerWidth / 2) / 40, y: (clientY - window.innerHeight / 2) / 40 });
+  };
+  const particles = useMemo(() => Array.from({ length: 12 }).map((_, i) => ({
+    id: i,
+    x: 5 + (i * 31.7) % 90,
+    y: 10 + (i * 41.3) % 80,
+    size: 2 + (i % 3),
+    delay: (i * 0.4) % 5,
+    duration: 6 + (i % 5),
+    color: i % 2 === 0 ? 'rgba(168,85,247,0.3)' : 'rgba(99,102,241,0.3)',
+  })), []);
 
   useEffect(() => {
     const id = sectionParam || 'quickstart';
@@ -766,19 +782,51 @@ export default function DocsPage() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0b0e', color: '#f5f5f7', fontFamily: 'Inter, sans-serif' }}>
+    <div
+      onMouseMove={handleMouseMove}
+      style={{ minHeight: '100vh', background: '#0b0b0e', color: '#f5f5f7', fontFamily: 'Inter, sans-serif', position: 'relative', overflow: 'hidden' }}
+    >
+      {/* Interactive parallax dot grid */}
+      <motion.div
+        animate={{ x: mousePos.x, y: mousePos.y }}
+        transition={{ ease: 'easeOut', duration: 0.4 }}
+        style={{
+          position: 'absolute', inset: -40, zIndex: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1.2px, transparent 1.2px)',
+          backgroundSize: '32px 32px',
+          maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Floating particles */}
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: [0, 0.5, 0.7, 0.2, 0], y: [0, -80, -160, -240], x: [0, p.size * 6, p.size * -5, p.size * 7], scale: [0.5, 1.3, 0.9, 0.5] }}
+          transition={{ delay: p.delay, duration: p.duration, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, borderRadius: '50%', background: p.color, boxShadow: `0 0 ${p.size * 3}px ${p.color}`, pointerEvents: 'none', zIndex: 0 }}
+        />
+      ))}
       {/* Ambient */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: '5%', left: '20%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.05) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        <motion.div animate={{ x: [0, 30, -20, 0], y: [0, -25, 30, 0], scale: [1, 1.1, 0.9, 1] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '5%', left: '20%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        <motion.div animate={{ x: [0, -25, 30, 0], y: [0, 30, -20, 0], scale: [1, 0.9, 1.1, 1] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 2 }} style={{ position: 'absolute', top: '60%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)', filter: 'blur(40px)' }} />
       </div>
 
       {/* Header */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        height: 60, borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(11,11,14,0.92)', backdropFilter: 'blur(20px)',
-        display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10,
-      }}>
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          height: 60, borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(11,11,14,0.92)', backdropFilter: 'blur(20px)',
+          display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/')}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #a855f7, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={14} color="white" />
@@ -801,13 +849,22 @@ export default function DocsPage() {
           <Menu size={16} />
         </button>
 
-        <button
-          onClick={() => navigate('/')}
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 14px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
-        >
-          <ArrowLeft size={13} /> Home
-        </button>
-      </header>
+        {user ? (
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none', borderRadius: 8, padding: '6px 14px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+          >
+            Dashboard
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/')}
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 14px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+          >
+            <ArrowLeft size={13} /> Home
+          </button>
+        )}
+      </motion.header>
 
       {/* Mobile sidebar overlay */}
       <AnimatePresence>
