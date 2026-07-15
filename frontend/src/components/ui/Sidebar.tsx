@@ -132,19 +132,30 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
                 position: 'relative',
                 color: isActive ? '#f5f5f7' : 'rgba(255,255,255,0.4)',
                 fontSize: '13px', fontWeight: isActive ? 600 : 500,
-                transition: 'color 0.15s',
-                background: isActive
-                  ? 'rgba(168,85,247,0.10)'
-                  : 'transparent',
+                transition: 'color 0.15s, background-color 0.15s',
               }}
               onMouseEnter={e => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.035)';
               }}
               onMouseLeave={e => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
               }}
             >
-              {/* Active left bar */}
+              {/* Active sliding capsule highlight */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabGlow"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: '8px',
+                    background: 'linear-gradient(90deg, rgba(168,85,247,0.12) 0%, rgba(99,102,241,0.06) 100%)',
+                    border: '1px solid rgba(168,85,247,0.18)',
+                    zIndex: 0,
+                  }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              {/* Active left bar decoration */}
               {isActive && (
                 <motion.div
                   layoutId="activeBar"
@@ -152,25 +163,30 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, notifi
                     position: 'absolute', left: 0, top: '20%', bottom: '20%',
                     width: '3px', borderRadius: '99px',
                     background: 'linear-gradient(180deg, #a855f7, #6366f1)',
+                    zIndex: 1,
                   }}
                   transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                 />
               )}
-              <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-              <AnimatePresence>
-                {!collapsed && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{ flex: 1, whiteSpace: 'nowrap' }}
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, zIndex: 1, position: 'relative' }}>
+                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
+                <AnimatePresence>
+                  {!collapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      style={{ flex: 1, whiteSpace: 'nowrap' }}
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
               {!collapsed && (
-                <Key>{item.shortcut}</Key>
+                <div style={{ zIndex: 1, position: 'relative' }}>
+                  <Key>{item.shortcut}</Key>
+                </div>
               )}
             </button>
           );

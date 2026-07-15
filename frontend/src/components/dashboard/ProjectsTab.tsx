@@ -37,25 +37,43 @@ function DashboardStatCard({ s, i }: { s: any; i: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       onMouseMove={handleMouseMove}
-      whileHover={{ y: -2, borderColor: 'rgba(255,255,255,0.12)' }}
+      whileHover={{ y: -2, borderColor: 'rgba(168,85,247,0.25)', boxShadow: '0 8px 30px rgba(168,85,247,0.06)' }}
       style={{
         background: `radial-gradient(180px circle at ${coords.x}px ${coords.y}px, rgba(255,255,255,0.04), transparent 70%), rgba(255,255,255,0.025)`,
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: '12px', padding: '18px 20px',
         display: 'flex', flexDirection: 'column', gap: '6px',
         position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.2s',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
     >
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
         background: s.accent, opacity: 0.7,
       }} />
-      <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', color: '#f5f5f7' }}>
-        {s.value}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', color: '#f5f5f7' }}>
+          {s.value}
+        </div>
+        {/* Pulsing indicator dot for Online Status */}
+        {s.label === 'Status' && s.value === 'Online' && (
+          <span style={{ display: 'flex', position: 'relative', width: 8, height: 8 }}>
+            <span style={{ position: 'absolute', display: 'inline-flex', height: '100%', width: '100%', borderRadius: '50%', background: '#10b981', opacity: 0.75, animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+            <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '50%', width: 8, height: 8, background: '#10b981' }} />
+          </span>
+        )}
       </div>
       <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {s.label}
+      </div>
+      {/* Dynamic progress bar animation */}
+      <div style={{ height: '3px', background: 'rgba(255,255,255,0.03)', borderRadius: '99px', marginTop: '6px', overflow: 'hidden' }}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: s.label === 'Status' ? '100%' : `${Math.min(100, Math.max(15, (Number(s.value) || 0) * 12))}%` }}
+          transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }}
+          style={{ height: '100%', background: s.accent, borderRadius: '99px' }}
+        />
       </div>
     </motion.div>
   );
@@ -142,10 +160,14 @@ function ProjectCard({ p, i, navigate, onDeleteClick }: ProjectCardProps) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)',
       }}>
-        <div style={{
-          width: '24px', height: '24px', borderRadius: '6px',
-          background: gradients[i % gradients.length], opacity: 0.8,
-        }} />
+        <motion.div
+          whileHover={{ rotate: 15, scale: 1.15 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          style={{
+            width: '24px', height: '24px', borderRadius: '6px',
+            background: gradients[i % gradients.length], opacity: 0.8,
+          }}
+        />
         <span style={{
           fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.4)',
           display: 'flex', alignItems: 'center', gap: '4px',
