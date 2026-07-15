@@ -101,6 +101,7 @@ model Project {
   // Relations
   board       Board?
 
+  @@index([workspaceId])
   @@map("projects")
 }
 
@@ -136,6 +137,7 @@ model Column {
   order   Int
   tasks   Task[]
 
+  @@index([boardId])
   @@map("columns")
 }
 
@@ -226,6 +228,7 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([taskId])
   @@map("comments")
 }
 
@@ -239,6 +242,7 @@ model TimeLog {
   description     String?
   loggedAt        DateTime @default(now())
 
+  @@index([taskId])
   @@map("time_logs")
 }
 
