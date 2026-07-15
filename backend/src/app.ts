@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 import config from './utils/config';
@@ -31,6 +32,9 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Trust proxy for correct client IP behind Render/Cloudflare
 app.set('trust proxy', 1);
+
+// Compression Middleware
+app.use(compression());
 
 // Security Middlewares
 app.use(helmet());
