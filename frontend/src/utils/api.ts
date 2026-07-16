@@ -69,7 +69,8 @@ export async function apiRequest<T = any>(
     headers.set('Authorization', `Bearer ${activeAccessToken}`);
   }
 
-  const url = path.startsWith('/api') ? path : `/api/v1${path.startsWith('/') ? '' : '/'}${path}`;
+  const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? '' : 'https://taskflow-j39g.onrender.com');
+  const url = path.startsWith('/api') ? `${API_BASE_URL}${path}` : `${API_BASE_URL}/api/v1${path.startsWith('/') ? '' : '/'}${path}`;
   
   const response = await fetch(url, {
     ...options,
@@ -95,7 +96,7 @@ export async function apiRequest<T = any>(
     isRefreshing = true;
 
     try {
-      const refreshRes = await fetch('/api/v1/auth/refresh', {
+      const refreshRes = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: activeRefreshToken }),

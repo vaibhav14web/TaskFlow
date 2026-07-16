@@ -464,7 +464,7 @@ export default function ProjectBoard() {
 
     // Connect to backend WS path
     const token = localStorage.getItem('taskflow_access_token') || '';
-    const wsUrl = window.location.origin.includes('localhost') ? 'http://localhost:5000' : '';
+    const wsUrl = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5000' : 'https://taskflow-j39g.onrender.com');
     const socketClient = io(wsUrl, {
       path: '/ws',
       query: { token }
