@@ -65,7 +65,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       }
     });
 
-    const delivered = await sendVerificationEmail(email, verificationToken);
+    const origin = (req.headers.origin as string) || (req.headers.referer as string) || '';
+    const delivered = await sendVerificationEmail(email, verificationToken, origin);
     if (!delivered) {
       // Do not create an account that cannot be used because verification mail failed.
       await prisma.user.delete({ where: { id: user.id } });
@@ -103,7 +104,8 @@ export const resendVerificationEmail = async (req: Request, res: Response, next:
       const verificationToken = crypto.randomBytes(config.auth.verificationTokenBytes).toString('hex');
       await prisma.user.update({ where: { id: user.id }, data: { verificationToken } });
 
-      const delivered = await sendVerificationEmail(user.email, verificationToken);
+      const origin = (req.headers.origin as string) || (req.headers.referer as string) || '';
+      const delivered = await sendVerificationEmail(user.email, verificationToken, origin);
       if (!delivered) {
         res.status(503).json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'We could not send a verification email. Please try again later.' } });
         return;
@@ -320,7 +322,8 @@ export const requestPasswordReset = async (req: Request, res: Response, next: Ne
       }
     });
 
-    await sendPasswordResetEmail(email, resetToken);
+    const origin = (req.headers.origin as string) || (req.headers.referer as string) || '';
+    await sendPasswordResetEmail(email, resetToken, origin);
 
     res.status(200).json({
       data: {

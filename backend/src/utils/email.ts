@@ -60,9 +60,10 @@ export const sendEmail = async (to: string, subject: string, html: string, text?
 };
 
 /** Send email verification link to a newly registered user */
-export const sendVerificationEmail = async (to: string, token: string): Promise<boolean> => {
-  const frontendUrl = (config as any).server?.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
-  const verifyUrl = `${frontendUrl}/auth?token=${token}`;
+export const sendVerificationEmail = async (to: string, token: string, frontendOrigin?: string): Promise<boolean> => {
+  const rawUrl = frontendOrigin || (config as any).server?.frontendUrl || process.env.FRONTEND_URL || 'https://taskflow-4lp.pages.dev';
+  const frontendUrl = rawUrl.replace(/\/$/, '');
+  const verifyUrl = `${frontendUrl}/verify-email?token=${token}`;
   return sendEmail(
     to,
     'Verify your TaskFlow email',
@@ -74,9 +75,10 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
 };
 
 /** Send password reset link */
-export const sendPasswordResetEmail = async (to: string, token: string) => {
-  const frontendUrl = (config as any).server?.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
-  const resetUrl = `${frontendUrl}/auth?reset=${token}`;
+export const sendPasswordResetEmail = async (to: string, token: string, frontendOrigin?: string) => {
+  const rawUrl = frontendOrigin || (config as any).server?.frontendUrl || process.env.FRONTEND_URL || 'https://taskflow-4lp.pages.dev';
+  const frontendUrl = rawUrl.replace(/\/$/, '');
+  const resetUrl = `${frontendUrl}/password-reset?token=${token}`;
   await sendEmail(
     to,
     'Reset your TaskFlow password',

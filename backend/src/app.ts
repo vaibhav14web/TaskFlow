@@ -44,6 +44,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
   'https://taskflow-4lp.pages.dev',
+  'https://task-flow-five-pearl.vercel.app',
 ];
 if (config.server.corsOrigin) {
   allowedOrigins.push(config.server.corsOrigin.replace(/\/$/, ''));
@@ -55,7 +56,8 @@ app.use(cors({
       !origin || 
       allowedOrigins.includes(origin) || 
       allowedOrigins.includes(origin.replace(/\/$/, '')) ||
-      origin.endsWith('.pages.dev')
+      origin.endsWith('.pages.dev') ||
+      origin.endsWith('.vercel.app')
     ) {
       callback(null, true);
     } else {

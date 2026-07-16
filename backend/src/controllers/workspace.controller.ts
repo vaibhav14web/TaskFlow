@@ -260,7 +260,9 @@ export const createInvite = async (req: AuthenticatedRequest, res: Response, nex
 
           const workspaceName = workspace?.name || 'a workspace';
           const inviterName = inviter?.name || 'Someone';
-          const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+          const origin = (req.headers.origin as string) || (req.headers.referer as string) || '';
+          const rawUrl = origin || process.env.FRONTEND_URL || 'https://taskflow-4lp.pages.dev';
+          const frontendUrl = rawUrl.replace(/\/$/, '');
           const inviteLink = `${frontendUrl}/join?token=${token}`;
 
           const subject = `You've been invited to join ${workspaceName} on TaskFlow`;
