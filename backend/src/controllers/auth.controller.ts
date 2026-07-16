@@ -483,7 +483,8 @@ export const googleAuthRedirect = async (req: Request, res: Response, next: Next
     const redirectUri = getGoogleRedirectUri();
     const scope = 'openid email profile';
     const redirect = req.query.redirect as string || '/';
-    const state = Buffer.from(JSON.stringify({ redirect })).toString('base64');
+    const origin = req.query.origin as string || '';
+    const state = Buffer.from(JSON.stringify({ redirect, origin })).toString('base64');
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
 
     res.redirect(authUrl);
@@ -496,18 +497,21 @@ export const googleAuthRedirect = async (req: Request, res: Response, next: Next
 export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code, error: oauthError, state } = req.query;
-    const rawFrontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
-    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
-
+    
     let redirect = '/';
+    let origin = '';
     if (state && typeof state === 'string') {
       try {
         const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
         redirect = stateData.redirect || '/';
+        origin = stateData.origin || '';
       } catch {
         // ignore invalid state
       }
     }
+
+    const rawFrontendUrl = origin || process.env.FRONTEND_URL || 'https://taskflow-4lp.pages.dev';
+    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
 
     if (oauthError) {
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
@@ -612,7 +616,8 @@ export const githubAuthRedirect = async (req: Request, res: Response, next: Next
   try {
     const clientId = process.env.GITHUB_CLIENT_ID;
     const redirect = req.query.redirect as string || '/';
-    const state = Buffer.from(JSON.stringify({ redirect })).toString('base64');
+    const origin = req.query.origin as string || '';
+    const state = Buffer.from(JSON.stringify({ redirect, origin })).toString('base64');
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=read:user%20user:email&state=${encodeURIComponent(state)}`;
 
     res.redirect(authUrl);
@@ -625,18 +630,21 @@ export const githubAuthRedirect = async (req: Request, res: Response, next: Next
 export const githubAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code, error: oauthError, state } = req.query;
-    const rawFrontendUrl = process.env.FRONTEND_URL || 'https://task-flow-five-pearl.vercel.app';
-    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
 
     let redirect = '/';
+    let origin = '';
     if (state && typeof state === 'string') {
       try {
         const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
         redirect = stateData.redirect || '/';
+        origin = stateData.origin || '';
       } catch {
         // ignore invalid state
       }
     }
+
+    const rawFrontendUrl = origin || process.env.FRONTEND_URL || 'https://taskflow-4lp.pages.dev';
+    const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
 
     if (oauthError) {
       res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(oauthError as string)}`);
