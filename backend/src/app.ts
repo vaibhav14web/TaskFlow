@@ -43,6 +43,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
+  'https://taskflow-4lp.pages.dev',
 ];
 if (config.server.corsOrigin) {
   allowedOrigins.push(config.server.corsOrigin.replace(/\/$/, ''));
@@ -50,7 +51,12 @@ if (config.server.corsOrigin) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+    if (
+      !origin || 
+      allowedOrigins.includes(origin) || 
+      allowedOrigins.includes(origin.replace(/\/$/, '')) ||
+      origin.endsWith('.pages.dev')
+    ) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));
