@@ -73,11 +73,13 @@ export default function Register() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `/api/v1/auth/oauth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://taskflow-j39g.onrender.com';
+    window.location.href = `${API_BASE_URL}/api/v1/auth/oauth/google?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
   const handleGithubLogin = () => {
-    window.location.href = `/api/v1/auth/oauth/github?redirect=${encodeURIComponent(redirectUrl)}`;
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://taskflow-j39g.onrender.com';
+    window.location.href = `${API_BASE_URL}/api/v1/auth/oauth/github?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
   return (
