@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma';
 import { Role } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
+import { invalidateBoardCache } from '../utils/cache';
 
 // 1. Add Checklist Item (Member+)
 // POST /tasks/:id/checklist
@@ -68,6 +69,8 @@ export const addChecklistItem = async (req: AuthenticatedRequest, res: Response,
         action: `added checklist item '${label}'`
       }
     });
+
+    await invalidateBoardCache(task.column.board.projectId);
 
     res.status(201).json({ data: item });
   } catch (error) {
@@ -142,6 +145,8 @@ export const updateChecklistItem = async (req: AuthenticatedRequest, res: Respon
         }))
       });
     }
+
+    await invalidateBoardCache(item.task.column.board.projectId);
 
     res.status(200).json({ data: updated });
   } catch (error) {
@@ -247,6 +252,8 @@ export const deleteChecklistItem = async (req: AuthenticatedRequest, res: Respon
         action: `deleted checklist item '${item.label}'`
       }
     });
+
+    await invalidateBoardCache(item.task.column.board.projectId);
 
     res.status(200).json({ data: { message: 'Checklist item deleted successfully.' } });
   } catch (error) {

@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma';
 import { Role } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
+import { invalidateBoardCache } from '../utils/cache';
 
 // 1. Assign User to Task (Member+)
 export const assignUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -97,6 +98,8 @@ export const assignUser = async (req: AuthenticatedRequest, res: Response, next:
       }
     });
 
+    await invalidateBoardCache(task.column.board.projectId);
+
     res.status(200).json({ data: { message: 'User assigned successfully.' } });
   } catch (error) {
     next(error);
@@ -170,6 +173,8 @@ export const unassignUser = async (req: AuthenticatedRequest, res: Response, nex
         action: `unassigned ${targetUser?.name || targetUserId}`
       }
     });
+
+    await invalidateBoardCache(task.column.board.projectId);
 
     res.status(200).json({ data: { message: 'User unassigned successfully.' } });
   } catch (error) {

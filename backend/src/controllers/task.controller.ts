@@ -5,6 +5,7 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
 import { emitToProject } from '../utils/socket';
 import config from '../utils/config';
+import { invalidateBoardCache } from '../utils/cache';
 
 // 1. Create Task (Member+)
 // Note: This endpoint is nested as POST /columns/:id/tasks, so req.params.id is the columnId
@@ -78,6 +79,7 @@ export const createTask = async (req: AuthenticatedRequest, res: Response, next:
       }
     });
 
+    await invalidateBoardCache(column.board.projectId);
     emitToProject(column.board.projectId, 'task.created', { task });
 
     res.status(201).json({ data: task });
@@ -247,6 +249,7 @@ export const updateTask = async (req: AuthenticatedRequest, res: Response, next:
 
     // Emit real-time updates
     const projectId = task.column.board.projectId;
+    await invalidateBoardCache(projectId);
     if (columnId !== undefined || order !== undefined) {
       emitToProject(projectId, 'task.moved', {
         taskId: id,
@@ -303,6 +306,7 @@ export const deleteTask = async (req: AuthenticatedRequest, res: Response, next:
       where: { id }
     });
 
+    await invalidateBoardCache(projectId);
     emitToProject(projectId, 'task.deleted', { taskId: id });
 
     res.status(200).json({ data: { message: 'Task deleted successfully.' } });

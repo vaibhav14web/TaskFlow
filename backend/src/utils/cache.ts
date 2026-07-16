@@ -83,3 +83,13 @@ export const cache = {
     }
   }
 };
+
+export const invalidateBoardCache = async (projectId: string): Promise<void> => {
+  try {
+    const versionKey = `project:${projectId}:board_version`;
+    const version = await cache.get<number>(versionKey) || 1;
+    await cache.set(versionKey, version + 1, 86400 * 30); // 30 days
+  } catch (err) {
+    logger.warn({ err, projectId }, 'Failed to invalidate board cache');
+  }
+};

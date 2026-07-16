@@ -69,7 +69,7 @@ export async function apiRequest<T = any>(
     headers.set('Authorization', `Bearer ${activeAccessToken}`);
   }
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? '' : 'https://taskflow-j39g.onrender.com');
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://taskflow-j39g.onrender.com';
   const url = path.startsWith('/api') ? `${API_BASE_URL}${path}` : `${API_BASE_URL}/api/v1${path.startsWith('/') ? '' : '/'}${path}`;
   
   const response = await fetch(url, {

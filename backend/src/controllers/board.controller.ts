@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma';
-import { Role, TaskPriority } from '@prisma/client';
+import { Role, TaskPriority, Board } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
+import { cache } from '../utils/cache';
 
 // 1. Get Project Board (Viewer+)
 export const getProjectBoard = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -38,6 +39,19 @@ export const getProjectBoard = async (req: AuthenticatedRequest, res: Response, 
     // Build the query where clause for filtering tasks
     const searchFilter = search ? String(search).trim().slice(0, 200) : '';
     const priorityFilter = priority ? (priority as TaskPriority) : undefined;
+
+    // Check board cache using version-based key
+    const versionKey = `project:${projectId}:board_version`;
+    const version = await cache.get<number>(versionKey) || 1;
+    const cacheKey = `project:${projectId}:board:${version}:${searchFilter}:${priorityFilter || ''}`;
+
+    if (req.query.refresh !== 'true') {
+      const cached = await cache.get<Board>(cacheKey);
+      if (cached) {
+        res.status(200).json({ data: cached });
+        return;
+      }
+    }
 
     const board = await prisma.board.findFirst({
       where: { projectId },
@@ -75,6 +89,9 @@ export const getProjectBoard = async (req: AuthenticatedRequest, res: Response, 
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Board not found for this project.' } });
       return;
     }
+
+    // Cache the board data for 1 hour (3600 seconds)
+    await cache.set(cacheKey, board, 3600);
 
     res.status(200).json({ data: board });
   } catch (error) {

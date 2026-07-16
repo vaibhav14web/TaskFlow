@@ -191,7 +191,17 @@ export default function ProjectBoard() {
 
   // Search & filter states
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
   // Sidebar / modal states
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
@@ -252,10 +262,10 @@ export default function ProjectBoard() {
 
   // 3. Fetch Kanban Board columns and tasks
   const { data: board, isLoading: isLoadingBoard } = useQuery<Board>({
-    queryKey: ['board', activeProjectId, searchTerm, priorityFilter],
+    queryKey: ['board', activeProjectId, debouncedSearchTerm, priorityFilter],
     queryFn: () => {
       const q = new URLSearchParams();
-      if (searchTerm) q.set('search', searchTerm);
+      if (debouncedSearchTerm) q.set('search', debouncedSearchTerm);
       if (priorityFilter) q.set('priority', priorityFilter);
       return apiRequest<Board>(`/projects/${activeProjectId}/board?${q.toString()}`);
     },

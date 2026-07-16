@@ -4,6 +4,7 @@ import { Role } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
 import config from '../utils/config';
+import { invalidateBoardCache } from '../utils/cache';
 
 // 1. Create Column (Member+)
 export const createColumn = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -66,6 +67,8 @@ export const createColumn = async (req: AuthenticatedRequest, res: Response, nex
         order: nextOrder
       }
     });
+
+    await invalidateBoardCache(projectId);
 
     res.status(201).json({ data: column });
   } catch (error) {
@@ -134,6 +137,8 @@ export const updateColumn = async (req: AuthenticatedRequest, res: Response, nex
       }
     });
 
+    await invalidateBoardCache(column.board.projectId);
+
     res.status(200).json({ data: updatedColumn });
   } catch (error) {
     next(error);
@@ -174,6 +179,8 @@ export const deleteColumn = async (req: AuthenticatedRequest, res: Response, nex
     await prisma.column.delete({
       where: { id }
     });
+
+    await invalidateBoardCache(column.board.projectId);
 
     res.status(200).json({ data: { message: 'Column deleted successfully.' } });
   } catch (error) {

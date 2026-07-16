@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma';
 import { Role } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { verifyWorkspaceRole } from '../utils/rbac';
+import { invalidateBoardCache } from '../utils/cache';
 
 // 1. Log Time (Member+)
 // POST /tasks/:id/time-logs
@@ -63,6 +64,9 @@ export const createTimeLog = async (req: AuthenticatedRequest, res: Response, ne
         }
       }
     });
+
+    // Invalidate board cache since timeLogs are embedded in board tasks
+    await invalidateBoardCache(task.column.board.projectId);
 
     res.status(201).json({ data: timeLog });
   } catch (error) {
@@ -189,6 +193,8 @@ export const deleteTimeLog = async (req: AuthenticatedRequest, res: Response, ne
     await prisma.timeLog.delete({
       where: { id: logId }
     });
+
+    await invalidateBoardCache(task.column.board.projectId);
 
     res.status(200).json({ data: { message: 'Time log deleted successfully.' } });
   } catch (error) {
